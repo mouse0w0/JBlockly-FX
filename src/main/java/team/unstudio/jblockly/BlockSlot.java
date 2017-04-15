@@ -1,5 +1,7 @@
 package team.unstudio.jblockly;
 
+import javafx.geometry.HPos;
+import javafx.geometry.VPos;
 import javafx.scene.layout.Region;
 
 public class BlockSlot extends Region{
@@ -31,6 +33,12 @@ public class BlockSlot extends Region{
 		if(this.block!=null) getChildren().remove(this.block);
 		if(block!=null) getChildren().add(block);
 		this.block = block;
+	}
+	
+	@Override
+	protected void layoutChildren() {
+		layoutInArea(block, 0, 0, block.getLayoutBounds().getWidth(), block.getLayoutBounds().getHeight(), 0,
+				HPos.CENTER, VPos.CENTER);
 	}
 	
 	@Override

@@ -2,7 +2,6 @@ package team.unstudio.jblockly;
 
 import javafx.application.Application;
 import javafx.scene.Scene;
-import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
 
 public class Main extends Application{
@@ -13,9 +12,11 @@ public class Main extends Application{
 
 	@Override
 	public void start(Stage stage) throws Exception {
-		Pane pane = new Pane(new Block());
+		BlockWorkspace workspace = new BlockWorkspace();
 		
-		Scene scene = new Scene(pane);
+		workspace.getChildren().add(new Block());
+		
+		Scene scene = new Scene(workspace);
 		
 		stage.setWidth(900);
 		stage.setHeight(600);
