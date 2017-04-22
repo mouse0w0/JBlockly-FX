@@ -60,4 +60,14 @@ public class BlockSlot extends Region{
 	protected double computePrefHeight(double width) {
 		return block.prefHeight(width);
 	}
+	
+	@Override
+	protected double computeMaxWidth(double height) {
+		return block.maxWidth(height);
+	}
+	
+	@Override
+	protected double computeMaxHeight(double width) {
+		return block.maxHeight(width);
+	}
 }

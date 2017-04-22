@@ -16,7 +16,7 @@ import javafx.scene.layout.Region;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.SVGPath;
 
-public class Block extends Region {
+public final class Block extends Region {
 
 	private final SVGPath svgPath;
 	private final Map<String,Node> nodeNames;
