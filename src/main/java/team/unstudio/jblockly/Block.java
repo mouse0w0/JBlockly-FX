@@ -1,6 +1,7 @@
 package team.unstudio.jblockly;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -14,14 +15,16 @@ import javafx.geometry.Orientation;
 import javafx.geometry.Point2D;
 import javafx.geometry.VPos;
 import javafx.scene.Node;
+import javafx.scene.Parent;
 import javafx.scene.layout.Region;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.SVGPath;
+import team.unstudio.jblockly.BlockSlot.SlotType;
 
 public final class Block extends Region {
 
 	private final SVGPath svgPath;
-	private final Map<String,Node> nodeNames;
+	private final Map<String,Node> nodeNames = new HashMap<>();
 	
 	private BooleanProperty movable;
     public final BooleanProperty movableProperty() {
@@ -49,9 +52,19 @@ public final class Block extends Region {
 		movableProperty().set(movable);
 	}
 	
-	private double oldX, oldY;
+	public BlockWorkspace getWorkspace() {
+		Parent parent = getParent();
+		if(parent instanceof BlockSlot)
+			return ((BlockSlot) parent).getWorkspace();
+		else if(parent instanceof BlockWorkspace)
+			return (BlockWorkspace) parent;
+		else
+			return null;
+	}
+	
+	private double tempOldX, tempOldY;
 	private boolean performingLayout,moving;
-	private double[][] tempArray1;
+	private double[][] tempArray;
 	
 	private static final String MARGIN_CONSTRAINT = "block-margin";
 
@@ -89,29 +102,32 @@ public final class Block extends Region {
 	}
 
 	public Block() {
-		nodeNames = new HashMap<>();
-		
 		svgPath = new SVGPath();
 		svgPath.setContent("M 30 0 H 50 L 30 50 H 0 Z");
 		svgPath.setFill(Color.GRAY);
+		getChildren().add(svgPath);
 
 		setOnMousePressed(event -> {
 			if(!isMovable()) return;
-			oldX = event.getSceneX() - getLayoutX();
-			oldY = event.getSceneY() - getLayoutY();
+			
+			if(getParent() instanceof BlockSlot)
+				getWorkspace().getChildren().add(Block.this);
+				
+			tempOldX = event.getSceneX() - getLayoutX();
+			tempOldY = event.getSceneY() - getLayoutY();
+			
 			moving = true;
 		});
 		setOnMouseDragged(event -> {
 			if(!moving) return;
-			setLayoutX(event.getSceneX() - oldX);
-			setLayoutY(event.getSceneY() - oldY);
+			setLayoutX(event.getSceneX() - tempOldX);
+			setLayoutY(event.getSceneY() - tempOldY);
 		});
 		setOnMouseReleased(event->{
 			moving = false;
 		});
-		setPickOnBounds(false);
-
-		getChildren().add(svgPath);
+		
+		setPickOnBounds(false); //启用不规则图形判断,具体见contain方法
 	}
 	
 	public Set<String> getNodeNames(){
@@ -143,6 +159,7 @@ public final class Block extends Region {
 			return;
 		}
 		getChildren().remove(nodeNames.get(name));
+		nodeNames.remove(name);
 	}
 
 	public boolean containNode(String name){
@@ -199,24 +216,22 @@ public final class Block extends Region {
 		List<Node> managed = new ArrayList<>(getManagedChildren());
 		managed.remove(svgPath);
 
-		Insets insets = getInsets();
+		//Insets insets = getInsets();
 		double width = getWidth();
 		double height = getHeight();
-		double top = snapSpace(insets.getTop());
-		double left = snapSpace(insets.getLeft());
-		double bottom = snapSpace(insets.getBottom());
-		double right = snapSpace(insets.getRight());
+		//double top = snapSpace(insets.getTop());
+		//double left = snapSpace(insets.getLeft());
+		//snapSpace(insets.getBottom());
+		//snapSpace(insets.getRight());
 		double space = 0;
 		HPos hpos = HPos.LEFT;
 		// VPos vpos = getAlignmentInternal().getVpos();
 
 		double[][] actualAreaBounds = getAreaBounds(managed, width, height, false);
-		double[][] actualLineBounds = getLineBounds(managed, actualAreaBounds);
-		//double contentWidth = width - left - right;
-		//double contentHeight = height - top - bottom;
+		Collection<BlockSlot> slots = getLineBounds(managed, actualAreaBounds);
 		
-		double x = left;
-		double y = top;
+		double x = 0;
+		double y = 0;
 
 		for (int i = 0, size = managed.size(); i < size; i++) {
 			Node child = managed.get(i);
@@ -225,29 +240,46 @@ public final class Block extends Region {
 		}
 	}
 	
-	private double[][] getLineBounds(List<Node> managed, double[][] actualAreaBounds) {
-		int line = 0;
-		for(Node node:managed)
-			if(node instanceof BlockSlot)
-				line++;
-		
-		double[][] temp = new double[2][line==0?1:line];
-		line = 0;
-		
-		for (int i = 0, size = managed.size(); i < size; i++) {
+	private Collection<BlockSlot> getLineBounds(List<Node> managed, double[][] actualAreaBounds) {
+		List<BlockSlot> temp = new ArrayList<>();
+		double tempWidth = 0,tempHeight = 0,tempMaxWidth=0;
+		for (int i = 0,lastBranchOrNextBlock = 0, size = managed.size(); i < size; i++) {
 			Node child = managed.get(i);
 			if(child instanceof BlockSlot){
-				line++;
+				BlockSlot slot = (BlockSlot) child;
+				
+				if(slot.getSlotType() == SlotType.BRANCH || slot.getSlotType() == SlotType.NEXT){
+					if(lastBranchOrNextBlock-i!=1)
+						replaceAllLineWidth(temp, lastBranchOrNextBlock+1, i-1, tempMaxWidth);
+					lastBranchOrNextBlock = i;
+				}
+					
+				
+				if(tempHeight<actualAreaBounds[1][i])
+					tempHeight = actualAreaBounds[1][i];
+				slot.setLineWidth(tempWidth);
+				slot.setLineHeight(tempHeight);
+				
+				temp.add(slot);
+				
+				if(tempMaxWidth<tempWidth)
+					tempMaxWidth = tempWidth;
 			}else{
-				temp[0][line]+=actualAreaBounds[0][i];
+				tempWidth+=actualAreaBounds[0][i];
+				if(tempHeight<actualAreaBounds[1][i])
+					tempHeight=actualAreaBounds[1][i];
 			}
-			if(temp[1][line]<actualAreaBounds[1][i]) temp[1][line]=actualAreaBounds[1][i];
 		}
 		return temp;
 	}
+	
+	private void replaceAllLineWidth(List<BlockSlot> managed,int start,int end,double width){
+		for (int i = start; i <= end; i++) 
+			managed.get(i).setLineWidth(width);
+	}
 
 	private double[][] getAreaBounds(List<Node> managed, double width, double height, boolean minimum) {
-		double[][] temp = getTempArray1(managed.size());
+		double[][] temp = getTempArray(managed.size());
 		final double insideWidth = width == -1 ? -1
 				: width - snapSpace(getInsets().getLeft()) - snapSpace(getInsets().getRight());
 		final double insideHeight = height == -1 ? -1
@@ -266,13 +298,13 @@ public final class Block extends Region {
 		return temp;
 	}
 
-	private double[][] getTempArray1(int size) {
-		if (tempArray1 == null) {
-			tempArray1 = new double[2][size];
-		} else if (tempArray1[0].length < size) {
-			tempArray1 = new double[2][Math.max(tempArray1.length * 3, size)];
+	private double[][] getTempArray(int size) {
+		if (tempArray == null) {
+			tempArray = new double[2][size];
+		} else if (tempArray[0].length < size) {
+			tempArray = new double[2][Math.max(tempArray.length * 3, size)];
 		}
-		return tempArray1;
+		return tempArray;
 
 	}
 	
