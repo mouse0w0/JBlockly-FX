@@ -1,9 +1,12 @@
-package team.unstudio.jblockly;
+package team.unstudio.jblockly.demo;
 
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
 import javafx.stage.Stage;
+import team.unstudio.jblockly.Block;
+import team.unstudio.jblockly.BlockWorkspace;
 
 public class Main extends Application{
 	
@@ -14,7 +17,10 @@ public class Main extends Application{
 	@Override
 	public void start(Stage stage) throws Exception {
 		Block block = new Block();
+		Label label = new Label("23333");
+		TextField field = new TextField();
 		block.addNode("label1", new Label("23333"));
+		block.addNode("field", field);
 		
 		BlockWorkspace workspace = new BlockWorkspace();
 		workspace.getChildren().add(block);

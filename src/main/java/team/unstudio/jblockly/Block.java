@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.BooleanPropertyBase;
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
@@ -20,9 +22,36 @@ public final class Block extends Region {
 
 	private final SVGPath svgPath;
 	private final Map<String,Node> nodeNames;
+	
+	private BooleanProperty movable;
+    public final BooleanProperty movableProperty() {
+        if (movable == null) {
+        	movable = new BooleanPropertyBase(true) {
+				
+				@Override
+				public String getName() {
+					return "movable";
+				}
+				
+				@Override
+				public Object getBean() {
+					return Block.this;
+				}
+			};
+        }
+        return movable;
+    }
+	public boolean isMovable() {
+		return movableProperty().get();
+	}
+
+	public void setMovable(boolean movable) {
+		movableProperty().set(movable);
+	}
+	
 	private double oldX, oldY;
-	private boolean performingLayout;
-	private double[][] tempArray;
+	private boolean performingLayout,moving;
+	private double[][] tempArray1;
 	
 	private static final String MARGIN_CONSTRAINT = "block-margin";
 
@@ -67,12 +96,18 @@ public final class Block extends Region {
 		svgPath.setFill(Color.GRAY);
 
 		setOnMousePressed(event -> {
+			if(!isMovable()) return;
 			oldX = event.getSceneX() - getLayoutX();
 			oldY = event.getSceneY() - getLayoutY();
+			moving = true;
 		});
 		setOnMouseDragged(event -> {
+			if(!moving) return;
 			setLayoutX(event.getSceneX() - oldX);
 			setLayoutY(event.getSceneY() - oldY);
+		});
+		setOnMouseReleased(event->{
+			moving = false;
 		});
 		setPickOnBounds(false);
 
@@ -109,7 +144,7 @@ public final class Block extends Region {
 		}
 		getChildren().remove(nodeNames.get(name));
 	}
-	
+
 	public boolean containNode(String name){
 		return nodeNames.containsKey(name);
 	}
@@ -176,21 +211,43 @@ public final class Block extends Region {
 		// VPos vpos = getAlignmentInternal().getVpos();
 
 		double[][] actualAreaBounds = getAreaBounds(managed, width, height, false);
-		double contentWidth = width - left - right;
-		double contentHeight = height - top - bottom;
+		double[][] actualLineBounds = getLineBounds(managed, actualAreaBounds);
+		//double contentWidth = width - left - right;
+		//double contentHeight = height - top - bottom;
 		
 		double x = left;
 		double y = top;
 
 		for (int i = 0, size = managed.size(); i < size; i++) {
 			Node child = managed.get(i);
-			layoutInArea(child, x, y, contentWidth, actualAreaBounds[1][i], 0, hpos, VPos.CENTER);
+			layoutInArea(child, x, y, actualAreaBounds[0][i], actualAreaBounds[1][i], 0, getMargin(child), hpos, VPos.CENTER);
 			x += actualAreaBounds[0][i] + space;
 		}
 	}
+	
+	private double[][] getLineBounds(List<Node> managed, double[][] actualAreaBounds) {
+		int line = 0;
+		for(Node node:managed)
+			if(node instanceof BlockSlot)
+				line++;
+		
+		double[][] temp = new double[2][line==0?1:line];
+		line = 0;
+		
+		for (int i = 0, size = managed.size(); i < size; i++) {
+			Node child = managed.get(i);
+			if(child instanceof BlockSlot){
+				line++;
+			}else{
+				temp[0][line]+=actualAreaBounds[0][i];
+			}
+			if(temp[1][line]<actualAreaBounds[1][i]) temp[1][line]=actualAreaBounds[1][i];
+		}
+		return temp;
+	}
 
 	private double[][] getAreaBounds(List<Node> managed, double width, double height, boolean minimum) {
-		double[][] temp = getTempArray(managed.size());
+		double[][] temp = getTempArray1(managed.size());
 		final double insideWidth = width == -1 ? -1
 				: width - snapSpace(getInsets().getLeft()) - snapSpace(getInsets().getRight());
 		final double insideHeight = height == -1 ? -1
@@ -209,13 +266,13 @@ public final class Block extends Region {
 		return temp;
 	}
 
-	private double[][] getTempArray(int size) {
-		if (tempArray == null) {
-			tempArray = new double[2][size];
-		} else if (tempArray[0].length < size) {
-			tempArray = new double[2][Math.max(tempArray.length * 3, size)];
+	private double[][] getTempArray1(int size) {
+		if (tempArray1 == null) {
+			tempArray1 = new double[2][size];
+		} else if (tempArray1[0].length < size) {
+			tempArray1 = new double[2][Math.max(tempArray1.length * 3, size)];
 		}
-		return tempArray;
+		return tempArray1;
 
 	}
 	

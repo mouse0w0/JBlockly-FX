@@ -37,37 +37,37 @@ public class BlockSlot extends Region{
 	
 	@Override
 	protected void layoutChildren() {
-		layoutInArea(block, 0, 0, block.getLayoutBounds().getWidth(), block.getLayoutBounds().getHeight(), 0,
-				HPos.CENTER, VPos.CENTER);
+		if(block==null) return;
+		layoutInArea(block, 0, 0, block.getLayoutBounds().getWidth(), block.getLayoutBounds().getHeight(), 0, HPos.CENTER, VPos.CENTER);
 	}
 	
 	@Override
 	protected double computeMinWidth(double height) {
-		return block.minWidth(height);
+		return block==null?0:block.minWidth(height);
 	}
 	
 	@Override
 	protected double computeMinHeight(double width) {
-		return block.minHeight(width);
+		return block==null?0:block.minHeight(width);
 	}
 	
 	@Override
 	protected double computePrefWidth(double height) {
-		return block.prefWidth(height);
+		return block==null?0:block.prefWidth(height);
 	}
 
 	@Override
 	protected double computePrefHeight(double width) {
-		return block.prefHeight(width);
+		return block==null?0:block.prefHeight(width);
 	}
 	
 	@Override
 	protected double computeMaxWidth(double height) {
-		return block.maxWidth(height);
+		return block==null?0:block.maxWidth(height);
 	}
 	
 	@Override
 	protected double computeMaxHeight(double width) {
-		return block.maxHeight(width);
+		return block==null?0:block.maxHeight(width);
 	}
 }
