@@ -94,9 +94,18 @@ public final class Block extends Region {
 		LEFT, TOP, BUTTOM, TOPANDBUTTOM, NONE
 	}
 
+	private ConnectionType connectionType = ConnectionType.NONE;
+
+	public ConnectionType getConnectionType() {
+		return connectionType;
+	}
+
+	public void setConnectionType(ConnectionType connectionType) {
+		this.connectionType = connectionType;
+	}
+
 	public Block() {
 		svgPath = new SVGPath();
-		svgPath.setContent("M 30 0 H 50 L 30 50 H 0 Z");
 		svgPath.setFill(Color.GRAY);
 		getChildren().add(svgPath);
 
@@ -245,6 +254,7 @@ public final class Block extends Region {
 		if (performingLayout) {
 			return;
 		}
+		performingLayout = true;
 
 		layoutInArea(svgPath, 0, 0, svgPath.getLayoutBounds().getWidth(), svgPath.getLayoutBounds().getHeight(), 0,
 				HPos.CENTER, VPos.CENTER);
@@ -266,6 +276,8 @@ public final class Block extends Region {
 		double[][] actualAreaBounds = getAreaBounds(managed, width, height, false);
 		List<BlockSlot> slots = getLineBounds(managed, actualAreaBounds, space);
 
+		svgPath.setContent(getSVGPath(slots));
+
 		double x = left;
 		double y = top;
 
@@ -274,6 +286,8 @@ public final class Block extends Region {
 			layoutLine(child, managed, actualAreaBounds, x, y, space, hpos, vpos);
 			y += child.getLineHeight();
 		}
+
+		performingLayout = false;
 	}
 
 	private void layoutLine(BlockSlot slot, List<Node> managed, double[][] actualAreaBounds, double left, double top,
@@ -492,57 +506,84 @@ public final class Block extends Region {
 	private static double snapSpace(double value, boolean snapToPixel) {
 		return snapToPixel ? Math.round(value) : value;
 	}
-	
+
 	/************************************************************
-	 *                                                          *
-	 *                        SVG Path                          *
-	 *                                                          *
+	 * * SVG Path * *
 	 ************************************************************/
-	
+
 	private static final double INSERT_WIDTH = 5;
-	private static final double INSERT_OFFSET_HEIGHT = 10;
+	private static final double INSERT_OFFSET_Y = 10;
 	private static final double INSERT_HEIGHT = 10;
-	
-	private String getSVGPath(){
-		
+	private static final double NEXT_WIDTH = 10;
+	private static final double NEXT_HEIGHT = 5;
+	private static final double NEXT_OFFSET_X = 10;
+	private static final double BRANCH_MIN_WIDTH = 10;
+
+	private String getSVGPath(List<BlockSlot> slots) {
+		if (slots.isEmpty())
+			return "";
+
+		ConnectionType connectionType = getConnectionType();
+		StringBuilder builder = new StringBuilder();
+		builder.append(getTopPath(connectionType, slots.get(0).getLineWidth()));
+		double y = 0;
+		for (int i = 0, size = slots.size(); i < size; i++) {
+			BlockSlot slot = slots.get(i);
+			switch (slot.getSlotType()) {
+			case BRANCH:
+				builder.append(getBranchPath(y, slot.getLineWidth(), slot.getLineHeight(),
+						i + 1 == size ? slot.getLineWidth() : slots.get(i + 1).getLineWidth()));
+				break;
+			case INSERT:
+				builder.append(getInsertPath(y, slot.getLineWidth()));
+				break;
+			default:
+				break;
+			}
+			if (slot.getSlotType() != SlotType.NEXT)
+				y += slot.getLineHeight();
+		}
+		builder.append(getBottomPath(connectionType, y));
+		return builder.toString();
 	}
-	
-	private String getTopPath(ConnectionType connectionType,double width){
+
+	private String getTopPath(ConnectionType connectionType, double width) {
 		switch (connectionType) {
 		case TOP:
 		case TOPANDBUTTOM:
-			return new StringBuilder("M 0 0 H 10 V 5 H 20 V 0 H ").append(width).toString();
-		case LEFT: //TODO
-			return new StringBuilder("M ").append(INSERT_WIDTH).append(" ").append(INSERT_HEIGHT+INSERT_OFFSET_HEIGHT)
-					.append("V 0 H ").append(width).toString();
+			return new StringBuilder("M 0 0 H ").append(NEXT_OFFSET_X).append(" V ").append(NEXT_HEIGHT).append(" H ")
+					.append(NEXT_OFFSET_X + NEXT_WIDTH).append(" V 0 H ").append(width).toString();
+		case LEFT:
+			return new StringBuilder("M ").append(INSERT_WIDTH).append(" ").append(INSERT_HEIGHT + INSERT_OFFSET_Y)
+					.append(" H 0 V ").append(INSERT_HEIGHT).append(" H ").append(INSERT_WIDTH).append(" V 0 H ")
+					.append(width).toString();
 		default:
-			return new StringBuilder("M 0 0 H ").append(width).toString(); 
+			return new StringBuilder("M 0 0 H ").append(width).toString();
 		}
 	}
-	
-	private String getBottomPath(ConnectionType connectionType,double height){
+
+	private String getBottomPath(ConnectionType connectionType, double y) {
 		switch (connectionType) {
 		case BUTTOM:
 		case TOPANDBUTTOM:
-			return new StringBuilder(" V ").append(height)
-					.append(" H 20 V ").append(height+5)
-					.append(" H 10 V ").append(height)
+			return new StringBuilder(" V ").append(y).append(" H 20 V ").append(y + 5).append(" H 10 V ").append(y)
 					.append(" H 0 Z").toString();
 		case LEFT:
-			return new StringBuilder(" V ").append(height)
-					.append(" H ").append(INSERT_WIDTH)
-					.append(" Z").toString(); 
+			return new StringBuilder(" V ").append(y).append(" H ").append(INSERT_WIDTH).append(" Z").toString();
 		default:
-			return new StringBuilder(" V ").append(height)
-					.append(" H 0 Z").toString(); 
+			return new StringBuilder(" V ").append(y).append(" H 0 Z").toString();
 		}
 	}
-	
-	private String getBranchPath(){
-		
+
+	private String getBranchPath(double y, double width, double height, double nextWidth) {
+		return new StringBuilder(" V ").append(y).append(" H ").append(width + NEXT_OFFSET_X + NEXT_WIDTH).append(" V ")
+				.append(y + NEXT_HEIGHT).append(" H ").append(width + NEXT_OFFSET_X).append(" V ").append(y)
+				.append(" H ").append(width).append(" V ").append(y + height).append(" H ").append(nextWidth)
+				.toString();
 	}
-	
-	private String getInsertPath(){
-		
+
+	private String getInsertPath(double y, double width) {
+		return new StringBuilder(" V ").append(y + INSERT_OFFSET_Y).append(" H ").append(width - INSERT_WIDTH)
+				.append(" V ").append(y + INSERT_OFFSET_Y + INSERT_HEIGHT).append(" H ").append(width).toString();
 	}
 }

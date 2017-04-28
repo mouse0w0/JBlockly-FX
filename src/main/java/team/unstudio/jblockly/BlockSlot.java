@@ -14,13 +14,17 @@ public class BlockSlot extends Region {
 		NONE, INSERT, BRANCH, NEXT
 	}
 
-	private SlotType slotType = SlotType.NONE;
+	private SlotType slotType;
 	private Block block;
 	private double lineWidth, lineHeight;
 	private int firstNode, lastNode;
 
 	public BlockSlot() {
+		this(SlotType.NONE);
+	}
 
+	public BlockSlot(SlotType slotType) {
+		this.slotType = slotType;
 	}
 
 	public BlockWorkspace getWorkspace() {

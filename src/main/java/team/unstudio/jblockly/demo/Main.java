@@ -4,6 +4,7 @@ import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
+import javafx.scene.text.Font;
 import javafx.stage.Stage;
 import team.unstudio.jblockly.Block;
 import team.unstudio.jblockly.BlockSlot;
@@ -19,19 +20,19 @@ public class Main extends Application {
 	@Override
 	public void start(Stage stage) throws Exception {
 		Block block = new Block();
-		Label label = new Label("23333");
-		TextField field = new TextField();
+		// TextField field = new TextField();
+		Label label = new Label("233333333333333333333333333");
+		label.setFont(new Font(18));
 		BlockSlot slot = new BlockSlot();
 		slot.setSlotType(SlotType.INSERT);
-		slot.setBlock(new Block());
-		block.addNode(new Label("23333"));
-		block.addNode("field", field);
+		block.addNode(label);
+		// block.addNode("field", field);
 		block.addNode("insert", slot);
 		block.addNode(new Label("23333"));
+		block.addNode(new BlockSlot(SlotType.BRANCH));
+		block.addNode(new Label("23333333333333333333"));
 		block.addNode(new BlockSlot());
-		block.addNode(new Label("23333"));
-		block.addNode(new BlockSlot());
-		block.addNode(new Label("23333"));
+		block.addNode(new Label("23333333333333333333333"));
 		block.addNode(new BlockSlot());
 
 		BlockWorkspace workspace = new BlockWorkspace();
