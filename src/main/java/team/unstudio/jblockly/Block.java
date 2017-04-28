@@ -1,14 +1,15 @@
 package team.unstudio.jblockly;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.BooleanPropertyBase;
+import javafx.collections.ObservableList;
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
@@ -50,16 +51,6 @@ public final class Block extends Region {
 
 	public void setMovable(boolean movable) {
 		movableProperty().set(movable);
-	}
-	
-	public BlockWorkspace getWorkspace() {
-		Parent parent = getParent();
-		if(parent instanceof BlockSlot)
-			return ((BlockSlot) parent).getWorkspace();
-		else if(parent instanceof BlockWorkspace)
-			return (BlockWorkspace) parent;
-		else
-			return null;
 	}
 	
 	private double tempOldX, tempOldY;
@@ -110,8 +101,11 @@ public final class Block extends Region {
 		setOnMousePressed(event -> {
 			if(!isMovable()) return;
 			
-			if(getParent() instanceof BlockSlot)
+			Parent parent = getParent();
+			if(parent instanceof BlockSlot){
 				getWorkspace().getChildren().add(Block.this);
+				((BlockSlot) parent).validateBlock();
+			}
 				
 			tempOldX = event.getSceneX() - getLayoutX();
 			tempOldY = event.getSceneY() - getLayoutY();
@@ -128,6 +122,16 @@ public final class Block extends Region {
 		});
 		
 		setPickOnBounds(false); //启用不规则图形判断,具体见contain方法
+	}
+	
+	public BlockWorkspace getWorkspace() {
+		Parent parent = getParent();
+		if(parent instanceof BlockSlot)
+			return ((BlockSlot) parent).getWorkspace();
+		else if(parent instanceof BlockWorkspace)
+			return (BlockWorkspace) parent;
+		else
+			return null;
 	}
 	
 	public Set<String> getNodeNames(){
@@ -154,6 +158,25 @@ public final class Block extends Region {
 		getChildren().add(index, node);
 	}
 	
+	public void addNode(Node node){
+		getChildren().add(node);
+	}
+	
+	public void addNode(Node node,int index){
+		getChildren().add(index, node);
+	}
+	
+	public void removeNode(Node node){
+		getChildren().remove(node);
+	}
+	
+	public String getNodeName(Node node){
+		for(Entry<String, Node> entry:nodeNames.entrySet())
+			if(entry.getValue().equals(node))
+				return entry.getKey();
+		return null;
+	}
+	
 	public void removeNode(String name){
 		if(!nodeNames.containsKey(name)){
 			return;
@@ -162,8 +185,17 @@ public final class Block extends Region {
 		nodeNames.remove(name);
 	}
 
-	public boolean containNode(String name){
+	public boolean containNodeName(String name){
 		return nodeNames.containsKey(name);
+	}
+	
+	public boolean containNode(Node node){
+		return getChildren().contains(node);
+	}
+	
+	@Override
+	public ObservableList<Node> getChildren() {
+		return super.getChildren();
 	}
 
 	@Override
@@ -216,56 +248,79 @@ public final class Block extends Region {
 		List<Node> managed = new ArrayList<>(getManagedChildren());
 		managed.remove(svgPath);
 
-		//Insets insets = getInsets();
+		Insets insets = getInsets();
 		double width = getWidth();
 		double height = getHeight();
-		//double top = snapSpace(insets.getTop());
-		//double left = snapSpace(insets.getLeft());
-		//snapSpace(insets.getBottom());
-		//snapSpace(insets.getRight());
+		double top = snapSpace(insets.getTop());
+		double left = snapSpace(insets.getLeft());
+		double bottom = snapSpace(insets.getBottom());
+		double right = snapSpace(insets.getRight());
 		double space = 0;
 		HPos hpos = HPos.LEFT;
-		// VPos vpos = getAlignmentInternal().getVpos();
+		VPos vpos = VPos.TOP;
 
 		double[][] actualAreaBounds = getAreaBounds(managed, width, height, false);
-		Collection<BlockSlot> slots = getLineBounds(managed, actualAreaBounds);
+		List<BlockSlot> slots = getLineBounds(managed, actualAreaBounds,space);
 		
-		double x = 0;
-		double y = 0;
-
-		for (int i = 0, size = managed.size(); i < size; i++) {
-			Node child = managed.get(i);
-			layoutInArea(child, x, y, actualAreaBounds[0][i], actualAreaBounds[1][i], 0, getMargin(child), hpos, VPos.CENTER);
-			x += actualAreaBounds[0][i] + space;
+		double x = left;
+		double y = top;
+		
+		for (int i = 0, size = slots.size(); i < size; i++) {
+			BlockSlot child = slots.get(i);
+			layoutLine(child, managed, actualAreaBounds, x, y, space, hpos,vpos);
+			y += child.getLineHeight();
 		}
 	}
 	
-	private Collection<BlockSlot> getLineBounds(List<Node> managed, double[][] actualAreaBounds) {
+	private void layoutLine(BlockSlot slot,List<Node> managed,double[][] actualAreaBounds,double left,double top,double space,HPos hpos,VPos vpos){
+		double x = left;
+		double y = top;
+		for(int i = slot.getFirstNode(),end = slot.getLastNode()-1; i <= end; i++) {
+			Node child = managed.get(i);
+			layoutInArea(child, x, y, actualAreaBounds[0][i], slot.getLineHeight(), 0, getMargin(child), hpos, vpos);
+			x += actualAreaBounds[0][i] + space;
+		}
+		layoutInArea(slot, x, y, slot.getWidth(), slot.getHeight(), 0, null, hpos, vpos);
+	}
+	
+	private List<BlockSlot> getLineBounds(List<Node> managed, double[][] actualAreaBounds,double space) {
 		List<BlockSlot> temp = new ArrayList<>();
 		double tempWidth = 0,tempHeight = 0,tempMaxWidth=0;
-		for (int i = 0,lastBranchOrNextBlock = 0, size = managed.size(); i < size; i++) {
+		int lastBranchOrNextBlock = -1,firstNode=0;
+		for (int i = 0, size = managed.size(); i < size; i++) {
 			Node child = managed.get(i);
 			if(child instanceof BlockSlot){
 				BlockSlot slot = (BlockSlot) child;
 				
-				if(slot.getSlotType() == SlotType.BRANCH || slot.getSlotType() == SlotType.NEXT){
-					if(lastBranchOrNextBlock-i!=1)
-						replaceAllLineWidth(temp, lastBranchOrNextBlock+1, i-1, tempMaxWidth);
-					lastBranchOrNextBlock = i;
-				}
-					
+				slot.setFirstNode(firstNode);
+				slot.setLastNode(i);
+				firstNode=i+1;
 				
-				if(tempHeight<actualAreaBounds[1][i])
+				if (tempHeight < actualAreaBounds[1][i])
 					tempHeight = actualAreaBounds[1][i];
+
 				slot.setLineWidth(tempWidth);
 				slot.setLineHeight(tempHeight);
-				
+
 				temp.add(slot);
 				
-				if(tempMaxWidth<tempWidth)
-					tempMaxWidth = tempWidth;
+				int tsize = temp.size();
+				if(slot.getSlotType() == SlotType.BRANCH || slot.getSlotType() == SlotType.NEXT){
+					if(tsize-lastBranchOrNextBlock!=1) //行对齐
+						replaceAllLineWidth(temp, lastBranchOrNextBlock+1, tsize-2, tempMaxWidth);
+					lastBranchOrNextBlock = tsize-1;
+					tempMaxWidth = 0;
+				} else {
+					if (tempMaxWidth < tempWidth) //求最大行宽
+						tempMaxWidth = tempWidth;
+					if(size-i==1&&tsize-lastBranchOrNextBlock!=1)//最后行对齐
+						replaceAllLineWidth(temp, lastBranchOrNextBlock+1, tsize-1, tempMaxWidth);
+				}
+
+				tempWidth = 0;
+				tempHeight = 0;
 			}else{
-				tempWidth+=actualAreaBounds[0][i];
+				tempWidth+=actualAreaBounds[0][i]+space;
 				if(tempHeight<actualAreaBounds[1][i])
 					tempHeight=actualAreaBounds[1][i];
 			}

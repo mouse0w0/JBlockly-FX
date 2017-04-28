@@ -17,6 +17,7 @@ public class BlockSlot extends Region{
 	private SlotType slotType = SlotType.NONE;
 	private Block block;
 	private double lineWidth,lineHeight;
+	private int firstNode,lastNode;
 	
 	public BlockSlot() {
 		
@@ -44,9 +45,18 @@ public class BlockSlot extends Region{
 	}
 
 	public void setBlock(Block block) {
-		if(this.block!=null) getChildren().remove(this.block);
-		if(block!=null) getChildren().add(block);
+		if(getSlotType() == SlotType.NONE)
+			return;
+		if(this.block!=null) 
+			getChildren().remove(this.block);
+		if(block!=null) 
+			getChildren().add(block);
 		this.block = block;
+	}
+	
+	public void validateBlock(){
+		if(block != null&&block.getParent()!=this)
+			block = null;
 	}
 	
 	@Override
@@ -85,20 +95,36 @@ public class BlockSlot extends Region{
 		return block==null?0:block.maxHeight(width);
 	}
 
-	public double getLineHeight() {
+	double getLineHeight() {
 		return lineHeight;
 	}
 
-	public void setLineHeight(double lineHeight) {
+	void setLineHeight(double lineHeight) {
 		this.lineHeight = lineHeight;
 	}
 
-	public double getLineWidth() {
+	double getLineWidth() {
 		return lineWidth;
 	}
 
-	public void setLineWidth(double lineWidth) {
+	void setLineWidth(double lineWidth) {
 		this.lineWidth = lineWidth;
+	}
+	
+	int getFirstNode() {
+		return firstNode;
+	}
+
+	void setFirstNode(int firstNode) {
+		this.firstNode = firstNode;
+	}
+
+	int getLastNode() {
+		return lastNode;
+	}
+
+	void setLastNode(int lastNode) {
+		this.lastNode = lastNode;
 	}
 	
     private double computeChildMinAreaHeight(Node child, double minBaselineComplement, Insets margin, double width) {

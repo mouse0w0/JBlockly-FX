@@ -24,9 +24,15 @@ public class Main extends Application{
 		BlockSlot slot = new BlockSlot();
 		slot.setSlotType(SlotType.INSERT);
 		slot.setBlock(new Block());
-		block.addNode("label1", new Label("23333"));
+		block.addNode(new Label("23333"));
 		block.addNode("field", field);
 		block.addNode("insert", slot);
+		block.addNode(new Label("23333"));
+		block.addNode(new BlockSlot());
+		block.addNode(new Label("23333"));
+		block.addNode(new BlockSlot());
+		block.addNode(new Label("23333"));
+		block.addNode(new BlockSlot());
 		
 		BlockWorkspace workspace = new BlockWorkspace();
 		workspace.getChildren().add(block);
