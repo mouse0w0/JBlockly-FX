@@ -25,26 +25,28 @@ import team.unstudio.jblockly.BlockSlot.SlotType;
 public final class Block extends Region {
 
 	private final SVGPath svgPath;
-	private final Map<String,Node> nodeNames = new HashMap<>();
-	
+	private final Map<String, Node> nodeNames = new HashMap<>();
+
 	private BooleanProperty movable;
-    public final BooleanProperty movableProperty() {
-        if (movable == null) {
-        	movable = new BooleanPropertyBase(true) {
-				
+
+	public final BooleanProperty movableProperty() {
+		if (movable == null) {
+			movable = new BooleanPropertyBase(true) {
+
 				@Override
 				public String getName() {
 					return "movable";
 				}
-				
+
 				@Override
 				public Object getBean() {
 					return Block.this;
 				}
 			};
-        }
-        return movable;
-    }
+		}
+		return movable;
+	}
+
 	public boolean isMovable() {
 		return movableProperty().get();
 	}
@@ -52,11 +54,11 @@ public final class Block extends Region {
 	public void setMovable(boolean movable) {
 		movableProperty().set(movable);
 	}
-	
+
 	private double tempOldX, tempOldY;
-	private boolean performingLayout,moving;
+	private boolean performingLayout, moving;
 	private double[][] tempArray;
-	
+
 	private static final String MARGIN_CONSTRAINT = "block-margin";
 
 	private static void setConstraint(Node node, Object key, Object value) {
@@ -87,7 +89,7 @@ public final class Block extends Region {
 	public static Insets getMargin(Node child) {
 		return (Insets) getConstraint(child, MARGIN_CONSTRAINT);
 	}
-	
+
 	public enum ConnectionType {
 		LEFT, TOP, BUTTOM, TOPANDBUTTOM, NONE
 	}
@@ -99,100 +101,102 @@ public final class Block extends Region {
 		getChildren().add(svgPath);
 
 		setOnMousePressed(event -> {
-			if(!isMovable()) return;
-			
+			if (!isMovable())
+				return;
+
 			Parent parent = getParent();
-			if(parent instanceof BlockSlot){
-				getWorkspace().getChildren().add(Block.this);
+			if (parent instanceof BlockSlot) {
+				BlockWorkspace.addBlockToWorkspace(this);
 				((BlockSlot) parent).validateBlock();
 			}
-				
+
 			tempOldX = event.getSceneX() - getLayoutX();
 			tempOldY = event.getSceneY() - getLayoutY();
-			
+
 			moving = true;
 		});
 		setOnMouseDragged(event -> {
-			if(!moving) return;
+			if (!moving)
+				return;
 			setLayoutX(event.getSceneX() - tempOldX);
 			setLayoutY(event.getSceneY() - tempOldY);
 		});
-		setOnMouseReleased(event->{
+		setOnMouseReleased(event -> {
 			moving = false;
 		});
-		
-		setPickOnBounds(false); //启用不规则图形判断,具体见contain方法
+
+		setPickOnBounds(false); // 启用不规则图形判断,具体见contain方法
 	}
-	
+
 	public BlockWorkspace getWorkspace() {
 		Parent parent = getParent();
-		if(parent instanceof BlockSlot)
+		if (parent instanceof BlockSlot)
 			return ((BlockSlot) parent).getWorkspace();
-		else if(parent instanceof BlockWorkspace)
+		else if (parent instanceof BlockWorkspace)
 			return (BlockWorkspace) parent;
 		else
 			return null;
 	}
-	
-	public Set<String> getNodeNames(){
+
+	public Set<String> getNodeNames() {
 		return nodeNames.keySet();
 	}
-	
-	public Node getNode(String name){
+
+	public Node getNode(String name) {
 		return nodeNames.get(name);
 	}
-	
-	public void addNode(String name,Node node){
-		if(nodeNames.containsKey(name)){
+
+	public void addNode(String name, Node node) {
+		if (nodeNames.containsKey(name)) {
 			return;
 		}
 		nodeNames.put(name, node);
 		getChildren().add(node);
 	}
-	
-	public void addNode(String name,Node node,int index){
-		if(nodeNames.containsKey(name)){
+
+	public void addNode(String name, Node node, int index) {
+		if (nodeNames.containsKey(name)) {
 			return;
 		}
 		nodeNames.put(name, node);
 		getChildren().add(index, node);
 	}
-	
-	public void addNode(Node node){
+
+	public void addNode(Node node) {
 		getChildren().add(node);
 	}
-	
-	public void addNode(Node node,int index){
+
+	public void addNode(Node node, int index) {
 		getChildren().add(index, node);
 	}
-	
-	public void removeNode(Node node){
+
+	public void removeNode(Node node) {
 		getChildren().remove(node);
 	}
-	
-	public String getNodeName(Node node){
-		for(Entry<String, Node> entry:nodeNames.entrySet())
-			if(entry.getValue().equals(node))
+
+	public String getNodeName(Node node) {
+		for (Entry<String, Node> entry : nodeNames.entrySet())
+			if (entry.getValue().equals(node))
 				return entry.getKey();
 		return null;
 	}
-	
-	public void removeNode(String name){
-		if(!nodeNames.containsKey(name)){
+
+	public void removeNode(String name) {
+		if (!nodeNames.containsKey(name)) {
 			return;
 		}
 		getChildren().remove(nodeNames.get(name));
 		nodeNames.remove(name);
 	}
 
-	public boolean containNodeName(String name){
+	public boolean containNodeName(String name) {
 		return nodeNames.containsKey(name);
 	}
-	
-	public boolean containNode(Node node){
+
+	public boolean containNode(Node node) {
 		return getChildren().contains(node);
 	}
-	
+
 	@Override
 	public ObservableList<Node> getChildren() {
 		return super.getChildren();
@@ -260,42 +264,43 @@ public final class Block extends Region {
 		VPos vpos = VPos.TOP;
 
 		double[][] actualAreaBounds = getAreaBounds(managed, width, height, false);
-		List<BlockSlot> slots = getLineBounds(managed, actualAreaBounds,space);
-		
+		List<BlockSlot> slots = getLineBounds(managed, actualAreaBounds, space);
+
 		double x = left;
 		double y = top;
-		
+
 		for (int i = 0, size = slots.size(); i < size; i++) {
 			BlockSlot child = slots.get(i);
-			layoutLine(child, managed, actualAreaBounds, x, y, space, hpos,vpos);
+			layoutLine(child, managed, actualAreaBounds, x, y, space, hpos, vpos);
 			y += child.getLineHeight();
 		}
 	}
-	
-	private void layoutLine(BlockSlot slot,List<Node> managed,double[][] actualAreaBounds,double left,double top,double space,HPos hpos,VPos vpos){
+
+	private void layoutLine(BlockSlot slot, List<Node> managed, double[][] actualAreaBounds, double left, double top,
+			double space, HPos hpos, VPos vpos) {
 		double x = left;
 		double y = top;
-		for(int i = slot.getFirstNode(),end = slot.getLastNode()-1; i <= end; i++) {
+		for (int i = slot.getFirstNode(), end = slot.getLastNode() - 1; i <= end; i++) {
 			Node child = managed.get(i);
 			layoutInArea(child, x, y, actualAreaBounds[0][i], slot.getLineHeight(), 0, getMargin(child), hpos, vpos);
 			x += actualAreaBounds[0][i] + space;
 		}
 		layoutInArea(slot, x, y, slot.getWidth(), slot.getHeight(), 0, null, hpos, vpos);
 	}
-	
-	private List<BlockSlot> getLineBounds(List<Node> managed, double[][] actualAreaBounds,double space) {
+
+	private List<BlockSlot> getLineBounds(List<Node> managed, double[][] actualAreaBounds, double space) {
 		List<BlockSlot> temp = new ArrayList<>();
-		double tempWidth = 0,tempHeight = 0,tempMaxWidth=0;
-		int lastBranchOrNextBlock = -1,firstNode=0;
+		double tempWidth = 0, tempHeight = 0, tempMaxWidth = 0;
+		int lastBranchOrNextBlock = -1, firstNode = 0;
 		for (int i = 0, size = managed.size(); i < size; i++) {
 			Node child = managed.get(i);
-			if(child instanceof BlockSlot){
+			if (child instanceof BlockSlot) {
 				BlockSlot slot = (BlockSlot) child;
-				
+
 				slot.setFirstNode(firstNode);
 				slot.setLastNode(i);
-				firstNode=i+1;
-				
+				firstNode = i + 1;
+
 				if (tempHeight < actualAreaBounds[1][i])
 					tempHeight = actualAreaBounds[1][i];
 
@@ -303,33 +308,33 @@ public final class Block extends Region {
 				slot.setLineHeight(tempHeight);
 
 				temp.add(slot);
-				
+
 				int tsize = temp.size();
-				if(slot.getSlotType() == SlotType.BRANCH || slot.getSlotType() == SlotType.NEXT){
-					if(tsize-lastBranchOrNextBlock!=1) //行对齐
-						replaceAllLineWidth(temp, lastBranchOrNextBlock+1, tsize-2, tempMaxWidth);
-					lastBranchOrNextBlock = tsize-1;
+				if (slot.getSlotType() == SlotType.BRANCH || slot.getSlotType() == SlotType.NEXT) {
+					if (tsize - lastBranchOrNextBlock != 1) // 行对齐
+						replaceAllLineWidth(temp, lastBranchOrNextBlock + 1, tsize - 2, tempMaxWidth);
+					lastBranchOrNextBlock = tsize - 1;
 					tempMaxWidth = 0;
 				} else {
-					if (tempMaxWidth < tempWidth) //求最大行宽
+					if (tempMaxWidth < tempWidth) // 求最大行宽
 						tempMaxWidth = tempWidth;
-					if(size-i==1&&tsize-lastBranchOrNextBlock!=1)//最后行对齐
-						replaceAllLineWidth(temp, lastBranchOrNextBlock+1, tsize-1, tempMaxWidth);
+					if (size - i == 1 && tsize - lastBranchOrNextBlock != 1)// 最后行对齐
+						replaceAllLineWidth(temp, lastBranchOrNextBlock + 1, tsize - 1, tempMaxWidth);
 				}
 
 				tempWidth = 0;
 				tempHeight = 0;
-			}else{
-				tempWidth+=actualAreaBounds[0][i]+space;
-				if(tempHeight<actualAreaBounds[1][i])
-					tempHeight=actualAreaBounds[1][i];
+			} else {
+				tempWidth += actualAreaBounds[0][i] + space;
+				if (tempHeight < actualAreaBounds[1][i])
+					tempHeight = actualAreaBounds[1][i];
 			}
 		}
 		return temp;
 	}
-	
-	private void replaceAllLineWidth(List<BlockSlot> managed,int start,int end,double width){
-		for (int i = start; i <= end; i++) 
+
+	private void replaceAllLineWidth(List<BlockSlot> managed, int start, int end, double width) {
+		for (int i = start; i <= end; i++)
 			managed.get(i).setLineWidth(width);
 	}
 
@@ -360,126 +365,184 @@ public final class Block extends Region {
 			tempArray = new double[2][Math.max(tempArray.length * 3, size)];
 		}
 		return tempArray;
+	}
 
+	private double computeChildMinAreaHeight(Node child, double minBaselineComplement, Insets margin, double width) {
+		final boolean snap = isSnapToPixel();
+		double top = margin != null ? snapSpace(margin.getTop(), snap) : 0;
+		double bottom = margin != null ? snapSpace(margin.getBottom(), snap) : 0;
+
+		double alt = -1;
+		if (child.isResizable() && child.getContentBias() == Orientation.HORIZONTAL) { // height
+																						// depends
+																						// on
+																						// width
+			double left = margin != null ? snapSpace(margin.getLeft(), snap) : 0;
+			double right = margin != null ? snapSpace(margin.getRight(), snap) : 0;
+			alt = snapSize(width != -1 ? boundedSize(child.minWidth(-1), width - left - right, child.maxWidth(-1))
+					: child.maxWidth(-1));
+		}
+
+		// For explanation, see computeChildPrefAreaHeight
+		if (minBaselineComplement != -1) {
+			double baseline = child.getBaselineOffset();
+			if (child.isResizable() && baseline == BASELINE_OFFSET_SAME_AS_HEIGHT) {
+				return top + snapSize(child.minHeight(alt)) + bottom + minBaselineComplement;
+			} else {
+				return baseline + minBaselineComplement;
+			}
+		} else {
+			return top + snapSize(child.minHeight(alt)) + bottom;
+		}
+	}
+
+	private double computeChildPrefAreaHeight(Node child, double prefBaselineComplement, Insets margin, double width) {
+		final boolean snap = isSnapToPixel();
+		double top = margin != null ? snapSpace(margin.getTop(), snap) : 0;
+		double bottom = margin != null ? snapSpace(margin.getBottom(), snap) : 0;
+
+		double alt = -1;
+		if (child.isResizable() && child.getContentBias() == Orientation.HORIZONTAL) { // height
+																						// depends
+																						// on
+																						// width
+			double left = margin != null ? snapSpace(margin.getLeft(), snap) : 0;
+			double right = margin != null ? snapSpace(margin.getRight(), snap) : 0;
+			alt = snapSize(boundedSize(child.minWidth(-1), width != -1 ? width - left - right : child.prefWidth(-1),
+					child.maxWidth(-1)));
+		}
+
+		if (prefBaselineComplement != -1) {
+			double baseline = child.getBaselineOffset();
+			if (child.isResizable() && baseline == BASELINE_OFFSET_SAME_AS_HEIGHT) {
+				// When baseline is same as height, the preferred height of the
+				// node will be above the baseline, so we need to add
+				// the preferred complement to it
+				return top + snapSize(boundedSize(child.minHeight(alt), child.prefHeight(alt), child.maxHeight(alt)))
+						+ bottom + prefBaselineComplement;
+			} else {
+				// For all other Nodes, it's just their baseline and the
+				// complement.
+				// Note that the complement already contain the Node's preferred
+				// (or fixed) height
+				return top + baseline + prefBaselineComplement + bottom;
+			}
+		} else {
+			return top + snapSize(boundedSize(child.minHeight(alt), child.prefHeight(alt), child.maxHeight(alt)))
+					+ bottom;
+		}
+	}
+
+	private double computeChildMinAreaWidth(Node child, double baselineComplement, Insets margin, double height,
+			boolean fillHeight) {
+		final boolean snap = isSnapToPixel();
+		double left = margin != null ? snapSpace(margin.getLeft(), snap) : 0;
+		double right = margin != null ? snapSpace(margin.getRight(), snap) : 0;
+		double alt = -1;
+		if (height != -1 && child.isResizable() && child.getContentBias() == Orientation.VERTICAL) { // width
+																										// depends
+																										// on
+																										// height
+			double top = margin != null ? snapSpace(margin.getTop(), snap) : 0;
+			double bottom = (margin != null ? snapSpace(margin.getBottom(), snap) : 0);
+			double bo = child.getBaselineOffset();
+			final double contentHeight = bo == BASELINE_OFFSET_SAME_AS_HEIGHT && baselineComplement != -1
+					? height - top - bottom - baselineComplement : height - top - bottom;
+			if (fillHeight) {
+				alt = snapSize(boundedSize(child.minHeight(-1), contentHeight, child.maxHeight(-1)));
+			} else {
+				alt = snapSize(boundedSize(child.minHeight(-1), child.prefHeight(-1),
+						Math.min(child.maxHeight(-1), contentHeight)));
+			}
+		}
+		return left + snapSize(child.minWidth(alt)) + right;
+	}
+
+	private double computeChildPrefAreaWidth(Node child, double baselineComplement, Insets margin, double height,
+			boolean fillHeight) {
+		final boolean snap = isSnapToPixel();
+		double left = margin != null ? snapSpace(margin.getLeft(), snap) : 0;
+		double right = margin != null ? snapSpace(margin.getRight(), snap) : 0;
+		double alt = -1;
+		if (height != -1 && child.isResizable() && child.getContentBias() == Orientation.VERTICAL) { // width
+																										// depends
+																										// on
+																										// height
+			double top = margin != null ? snapSpace(margin.getTop(), snap) : 0;
+			double bottom = margin != null ? snapSpace(margin.getBottom(), snap) : 0;
+			double bo = child.getBaselineOffset();
+			final double contentHeight = bo == BASELINE_OFFSET_SAME_AS_HEIGHT && baselineComplement != -1
+					? height - top - bottom - baselineComplement : height - top - bottom;
+			if (fillHeight) {
+				alt = snapSize(boundedSize(child.minHeight(-1), contentHeight, child.maxHeight(-1)));
+			} else {
+				alt = snapSize(boundedSize(child.minHeight(-1), child.prefHeight(-1),
+						Math.min(child.maxHeight(-1), contentHeight)));
+			}
+		}
+		return left + snapSize(boundedSize(child.minWidth(alt), child.prefWidth(alt), child.maxWidth(alt))) + right;
+	}
+
+	private static double boundedSize(double min, double pref, double max) {
+		double a = pref >= min ? pref : min;
+		double b = min >= max ? min : max;
+		return a <= b ? a : b;
+	}
+
+	private static double snapSpace(double value, boolean snapToPixel) {
+		return snapToPixel ? Math.round(value) : value;
 	}
 	
-    private double computeChildMinAreaHeight(Node child, double minBaselineComplement, Insets margin, double width) {
-        final boolean snap = isSnapToPixel();
-        double top =margin != null? snapSpace(margin.getTop(), snap) : 0;
-        double bottom = margin != null? snapSpace(margin.getBottom(), snap) : 0;
-
-        double alt = -1;
-        if (child.isResizable() && child.getContentBias() == Orientation.HORIZONTAL) { // height depends on width
-            double left = margin != null? snapSpace(margin.getLeft(), snap) : 0;
-            double right = margin != null? snapSpace(margin.getRight(), snap) : 0;
-            alt = snapSize(width != -1? boundedSize(child.minWidth(-1), width - left - right, child.maxWidth(-1)) :
-                    child.maxWidth(-1));
-        }
-
-        // For explanation, see computeChildPrefAreaHeight
-        if (minBaselineComplement != -1) {
-            double baseline = child.getBaselineOffset();
-            if (child.isResizable() && baseline == BASELINE_OFFSET_SAME_AS_HEIGHT) {
-                return top + snapSize(child.minHeight(alt)) + bottom
-                        + minBaselineComplement;
-            } else {
-                return baseline + minBaselineComplement;
-            }
-        } else {
-            return top + snapSize(child.minHeight(alt)) + bottom;
-        }
-    }
-    
-    private double computeChildPrefAreaHeight(Node child, double prefBaselineComplement, Insets margin, double width) {
-        final boolean snap = isSnapToPixel();
-        double top = margin != null? snapSpace(margin.getTop(), snap) : 0;
-        double bottom = margin != null? snapSpace(margin.getBottom(), snap) : 0;
-
-        double alt = -1;
-        if (child.isResizable() && child.getContentBias() == Orientation.HORIZONTAL) { // height depends on width
-            double left = margin != null ? snapSpace(margin.getLeft(), snap) : 0;
-            double right = margin != null ? snapSpace(margin.getRight(), snap) : 0;
-            alt = snapSize(boundedSize(
-                    child.minWidth(-1), width != -1 ? width - left - right
-                    : child.prefWidth(-1), child.maxWidth(-1)));
-        }
-
-        if (prefBaselineComplement != -1) {
-            double baseline = child.getBaselineOffset();
-            if (child.isResizable() && baseline == BASELINE_OFFSET_SAME_AS_HEIGHT) {
-                // When baseline is same as height, the preferred height of the node will be above the baseline, so we need to add
-                // the preferred complement to it
-                return top + snapSize(boundedSize(child.minHeight(alt), child.prefHeight(alt), child.maxHeight(alt))) + bottom
-                        + prefBaselineComplement;
-            } else {
-                // For all other Nodes, it's just their baseline and the complement.
-                // Note that the complement already contain the Node's preferred (or fixed) height
-                return top + baseline + prefBaselineComplement + bottom;
-            }
-        } else {
-            return top + snapSize(boundedSize(child.minHeight(alt), child.prefHeight(alt), child.maxHeight(alt))) + bottom;
-        }
-    }
-    
-    private double computeChildMinAreaWidth(Node child, double baselineComplement, Insets margin, double height, boolean fillHeight) {
-        final boolean snap = isSnapToPixel();
-        double left = margin != null? snapSpace(margin.getLeft(), snap) : 0;
-        double right = margin != null? snapSpace(margin.getRight(), snap) : 0;
-        double alt = -1;
-        if (height != -1 && child.isResizable() && child.getContentBias() == Orientation.VERTICAL) { // width depends on height
-            double top = margin != null? snapSpace(margin.getTop(), snap) : 0;
-            double bottom = (margin != null? snapSpace(margin.getBottom(), snap) : 0);
-            double bo = child.getBaselineOffset();
-            final double contentHeight = bo == BASELINE_OFFSET_SAME_AS_HEIGHT && baselineComplement != -1 ?
-                    height - top - bottom - baselineComplement :
-                     height - top - bottom;
-            if (fillHeight) {
-                alt = snapSize(boundedSize(
-                        child.minHeight(-1), contentHeight,
-                        child.maxHeight(-1)));
-            } else {
-                alt = snapSize(boundedSize(
-                        child.minHeight(-1),
-                        child.prefHeight(-1),
-                        Math.min(child.maxHeight(-1), contentHeight)));
-            }
-        }
-        return left + snapSize(child.minWidth(alt)) + right;
-    }
-    
-    private double computeChildPrefAreaWidth(Node child, double baselineComplement, Insets margin, double height, boolean fillHeight) {
-        final boolean snap = isSnapToPixel();
-        double left = margin != null? snapSpace(margin.getLeft(), snap) : 0;
-        double right = margin != null? snapSpace(margin.getRight(), snap) : 0;
-        double alt = -1;
-        if (height != -1 && child.isResizable() && child.getContentBias() == Orientation.VERTICAL) { // width depends on height
-            double top = margin != null? snapSpace(margin.getTop(), snap) : 0;
-            double bottom = margin != null? snapSpace(margin.getBottom(), snap) : 0;
-            double bo = child.getBaselineOffset();
-            final double contentHeight = bo == BASELINE_OFFSET_SAME_AS_HEIGHT && baselineComplement != -1 ?
-                    height - top - bottom - baselineComplement :
-                     height - top - bottom;
-            if (fillHeight) {
-                alt = snapSize(boundedSize(
-                        child.minHeight(-1), contentHeight,
-                        child.maxHeight(-1)));
-            } else {
-                alt = snapSize(boundedSize(
-                        child.minHeight(-1),
-                        child.prefHeight(-1),
-                        Math.min(child.maxHeight(-1), contentHeight)));
-            }
-        }
-        return left + snapSize(boundedSize(child.minWidth(alt), child.prefWidth(alt), child.maxWidth(alt))) + right;
-    }
-    
-    private static double boundedSize(double min, double pref, double max) {
-        double a = pref >= min ? pref : min;
-        double b = min >= max ? min : max;
-        return a <= b ? a : b;
-    }
-    
-    private static double snapSpace(double value, boolean snapToPixel) {
-        return snapToPixel ? Math.round(value) : value;
-    }
+	/************************************************************
+	 *                                                          *
+	 *                        SVG Path                          *
+	 *                                                          *
+	 ************************************************************/
+	
+	private static final double INSERT_WIDTH = 5;
+	private static final double INSERT_OFFSET_HEIGHT = 10;
+	private static final double INSERT_HEIGHT = 10;
+	
+	private String getSVGPath(){
+		
+	}
+	
+	private String getTopPath(ConnectionType connectionType,double width){
+		switch (connectionType) {
+		case TOP:
+		case TOPANDBUTTOM:
+			return new StringBuilder("M 0 0 H 10 V 5 H 20 V 0 H ").append(width).toString();
+		case LEFT: //TODO
+			return new StringBuilder("M ").append(INSERT_WIDTH).append(" ").append(INSERT_HEIGHT+INSERT_OFFSET_HEIGHT)
+					.append("V 0 H ").append(width).toString();
+		default:
+			return new StringBuilder("M 0 0 H ").append(width).toString(); 
+		}
+	}
+	
+	private String getBottomPath(ConnectionType connectionType,double height){
+		switch (connectionType) {
+		case BUTTOM:
+		case TOPANDBUTTOM:
+			return new StringBuilder(" V ").append(height)
+					.append(" H 20 V ").append(height+5)
+					.append(" H 10 V ").append(height)
+					.append(" H 0 Z").toString();
+		case LEFT:
+			return new StringBuilder(" V ").append(height)
+					.append(" H ").append(INSERT_WIDTH)
+					.append(" Z").toString(); 
+		default:
+			return new StringBuilder(" V ").append(height)
+					.append(" H 0 Z").toString(); 
+		}
+	}
+	
+	private String getBranchPath(){
+		
+	}
+	
+	private String getInsertPath(){
+		
+	}
 }
