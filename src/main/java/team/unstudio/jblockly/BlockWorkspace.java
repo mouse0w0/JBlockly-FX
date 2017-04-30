@@ -7,7 +7,11 @@ public class BlockWorkspace extends Pane {
 
 	public void addBlock(Block block) {
 		Parent parent = block.getParent();
-		if (parent instanceof BlockWorkspace) {
+		if(parent==null) {
+			getChildren().add(block);
+			block.setLayoutX(0);
+			block.setLayoutY(0);
+		}else if (parent instanceof BlockWorkspace) {
 			if (!parent.equals(this)) {
 				getChildren().add(block);
 				block.setLayoutX(0);
@@ -35,6 +39,8 @@ public class BlockWorkspace extends Pane {
 
 	public static void addBlockToWorkspace(Block block) {
 		Parent parent = block.getParent();
+		if (parent == null)
+			return;
 		if (parent instanceof BlockWorkspace)
 			return;
 
@@ -49,4 +55,5 @@ public class BlockWorkspace extends Pane {
 		block.setLayoutX(x);
 		block.setLayoutY(y);
 	}
+	
 }

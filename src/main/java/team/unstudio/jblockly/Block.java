@@ -26,6 +26,7 @@ public final class Block extends Region {
 
 	private final SVGPath svgPath;
 	private final Map<String, Node> nodeNames = new HashMap<>();
+	private List<BlockSlot> slots;
 
 	private BooleanProperty movable;
 
@@ -94,7 +95,7 @@ public final class Block extends Region {
 		LEFT, TOP, BUTTOM, TOPANDBUTTOM, NONE
 	}
 
-	private ConnectionType connectionType = ConnectionType.LEFT;
+	private ConnectionType connectionType = ConnectionType.NONE;
 
 	public ConnectionType getConnectionType() {
 		return connectionType;
@@ -107,18 +108,15 @@ public final class Block extends Region {
 	public Block() {
 		svgPath = new SVGPath();
 		svgPath.setFill(Color.GRAY);
+		svgPath.setStroke(Color.BLACK);
 		getChildren().add(svgPath);
 
 		setOnMousePressed(event -> {
 			if (!isMovable())
 				return;
 
-			Parent parent = getParent();
-			if (parent instanceof BlockSlot) {
-				BlockWorkspace.addBlockToWorkspace(this);
-				((BlockSlot) parent).validateBlock();
-			}
-
+			addToWorkspace();
+			
 			tempOldX = event.getSceneX() - getLayoutX();
 			tempOldY = event.getSceneY() - getLayoutY();
 
@@ -145,6 +143,14 @@ public final class Block extends Region {
 			return (BlockWorkspace) parent;
 		else
 			return null;
+	}
+	
+	public void addToWorkspace(){
+		Parent parent = getParent();
+		if (parent instanceof BlockSlot) {
+			BlockWorkspace.addBlockToWorkspace(this);
+			((BlockSlot) parent).validateBlock();
+		}
 	}
 
 	public Set<String> getNodeNames() {
@@ -211,25 +217,21 @@ public final class Block extends Region {
 		return super.getChildren();
 	}
 
-	@Override
-	protected double computeMinWidth(double height) {
-		return svgPath.minWidth(height);
-	}
-
-	@Override
-	protected double computeMinHeight(double width) {
-		return svgPath.minHeight(width);
-	}
-
-	@Override
-	protected double computePrefWidth(double height) {
-		return svgPath.prefWidth(height);
-	}
-
-	@Override
-	protected double computePrefHeight(double width) {
-		return svgPath.prefHeight(width);
-	}
+//	@Override
+//	protected double computePrefWidth(double height) {
+//		return svgPath.prefWidth(height);
+//	}
+//
+//	@Override
+//	protected double computePrefHeight(double width) {
+//		if(slots==null)
+//			return 0;
+//		
+//		double height = 0;
+//		for(BlockSlot slot:slots)
+//			height += slot.getLineHeight();
+//		return height;
+//	}
 
 	@Override
 	public boolean contains(double localX, double localY) {
@@ -255,7 +257,7 @@ public final class Block extends Region {
 			return;
 		performingLayout = true;
 
-		layoutInArea(svgPath, 0, 0, svgPath.getLayoutBounds().getWidth(), svgPath.getLayoutBounds().getHeight(), 0,
+		layoutInArea(svgPath, 0, 0, computeChildPrefAreaWidth(svgPath, -1, null, -1, false), computeChildPrefAreaHeight(svgPath, -1, null, -1), 0,
 				HPos.CENTER, VPos.CENTER);
 
 		List<Node> managed = new ArrayList<>(getManagedChildren());
@@ -264,7 +266,7 @@ public final class Block extends Region {
 		double hSpace = 0;
 		double vSpace = 5;
 		HPos hpos = HPos.LEFT;
-		VPos vpos = VPos.TOP;
+		VPos vpos = VPos.CENTER;
 
 		double[][] actualAreaBounds = getAreaBounds(managed, -1, -1, false);
 		List<BlockSlot> slots = getLineBounds(managed, actualAreaBounds, hSpace);
@@ -359,6 +361,7 @@ public final class Block extends Region {
 					tempHeight = actualAreaBounds[1][i];
 			}
 		}
+		this.slots = temp;
 		return temp;
 	}
 

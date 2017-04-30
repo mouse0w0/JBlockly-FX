@@ -1,5 +1,7 @@
 package team.unstudio.jblockly;
 
+import javafx.geometry.BoundingBox;
+import javafx.geometry.Bounds;
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
@@ -10,6 +12,8 @@ import javafx.scene.layout.Region;
 
 public class BlockSlot extends Region {
 
+	public static final Bounds INSERT_SLOT_BOUNDS = new BoundingBox(0, Block.INSERT_OFFSET_Y, Block.INSERT_WIDTH, Block.INSERT_HEIGHT);
+	public static final Bounds NEXT_SLOT_BOUNDS = new BoundingBox(Block.NEXT_OFFSET_X,0,Block.NEXT_WIDTH,Block.NEXT_HEIGHT);
 	public static final double BLOCK_SLOT_MIN_WIDTH=5;
 	public static final double BLOCK_SLOT_MIN_HEIGHT=30;
 	public static final double BRANCH_MIN_WIDTH = 20;
@@ -66,6 +70,10 @@ public class BlockSlot extends Region {
 		if (block != null && block.getParent() != this)
 			block = null;
 	}
+	
+	public void tryAddBlock(Block block,double x,double y){
+		
+	}
 
 	@Override
 	protected void layoutChildren() {
@@ -73,16 +81,6 @@ public class BlockSlot extends Region {
 			return;
 		layoutInArea(block, 0, 0, computeChildMinAreaWidth(block, -1, null, -1, false),
 				computeChildMinAreaHeight(block, -1, null, -1), 0, null, HPos.CENTER, VPos.CENTER);
-	}
-
-	@Override
-	protected double computeMinWidth(double height) {
-		return block == null ? BLOCK_SLOT_MIN_WIDTH : block.minWidth(height);
-	}
-
-	@Override
-	protected double computeMinHeight(double width) {
-		return block == null ? BLOCK_SLOT_MIN_HEIGHT : block.minHeight(width);
 	}
 
 	@Override
@@ -95,15 +93,6 @@ public class BlockSlot extends Region {
 		return block == null ? BLOCK_SLOT_MIN_HEIGHT : block.prefHeight(width);
 	}
 
-	@Override
-	protected double computeMaxWidth(double height) {
-		return block == null ? BLOCK_SLOT_MIN_WIDTH : block.maxWidth(height);
-	}
-
-	@Override
-	protected double computeMaxHeight(double width) {
-		return block == null ? BLOCK_SLOT_MIN_HEIGHT : block.maxHeight(width);
-	}
 
 	double getLineHeight() {
 		return lineHeight;
