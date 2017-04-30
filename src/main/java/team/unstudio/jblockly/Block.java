@@ -94,7 +94,7 @@ public final class Block extends Region {
 		LEFT, TOP, BUTTOM, TOPANDBUTTOM, NONE
 	}
 
-	private ConnectionType connectionType = ConnectionType.NONE;
+	private ConnectionType connectionType = ConnectionType.LEFT;
 
 	public ConnectionType getConnectionType() {
 		return connectionType;
@@ -251,9 +251,8 @@ public final class Block extends Region {
 
 	@Override
 	protected void layoutChildren() {
-		if (performingLayout) {
+		if (performingLayout) 
 			return;
-		}
 		performingLayout = true;
 
 		layoutInArea(svgPath, 0, 0, svgPath.getLayoutBounds().getWidth(), svgPath.getLayoutBounds().getHeight(), 0,
@@ -262,29 +261,45 @@ public final class Block extends Region {
 		List<Node> managed = new ArrayList<>(getManagedChildren());
 		managed.remove(svgPath);
 
-		Insets insets = getInsets();
-		double width = getWidth();
-		double height = getHeight();
-		double top = snapSpace(insets.getTop());
-		double left = snapSpace(insets.getLeft());
-		double bottom = snapSpace(insets.getBottom());
-		double right = snapSpace(insets.getRight());
-		double space = 0;
+		double hSpace = 0;
+		double vSpace = 5;
 		HPos hpos = HPos.LEFT;
 		VPos vpos = VPos.TOP;
 
-		double[][] actualAreaBounds = getAreaBounds(managed, width, height, false);
-		List<BlockSlot> slots = getLineBounds(managed, actualAreaBounds, space);
+		double[][] actualAreaBounds = getAreaBounds(managed, -1, -1, false);
+		List<BlockSlot> slots = getLineBounds(managed, actualAreaBounds, hSpace);
 
-		svgPath.setContent(getSVGPath(slots));
+		if (slots.isEmpty()){
+			svgPath.setContent("");
+		}else{
+			ConnectionType connectionType = getConnectionType();
+			StringBuilder builder = new StringBuilder();
+			builder.append(getTopPath(connectionType, slots.get(0).getLineWidth()));
 
-		double x = left;
-		double y = top;
-
-		for (int i = 0, size = slots.size(); i < size; i++) {
-			BlockSlot child = slots.get(i);
-			layoutLine(child, managed, actualAreaBounds, x, y, space, hpos, vpos);
-			y += child.getLineHeight();
+			double x = getConnectionType()==ConnectionType.LEFT?INSERT_WIDTH:0;
+			double y = 0;
+	
+			for (int i = 0, size = slots.size(); i < size; i++) {
+				BlockSlot slot = slots.get(i);
+				
+				layoutLine(slot, managed, actualAreaBounds, x, y, hSpace, hpos, vpos);
+				
+				switch (slot.getSlotType()) {
+				case BRANCH:
+					builder.append(getBranchPath(connectionType,y, slot.getLineWidth(), slot.getLineHeight(),
+							i + 1 == size ? slot.getLineWidth() : slots.get(i + 1).getLineWidth()));
+					break;
+				case INSERT:
+					builder.append(getInsertPath(connectionType,y, slot.getLineWidth()));
+					break;
+				default:
+					break;
+				}
+				if (slot.getSlotType() != SlotType.NEXT)
+					y += slot.getLineHeight();
+			}
+			builder.append(getBottomPath(connectionType, y));
+			svgPath.setContent(builder.toString());
 		}
 
 		performingLayout = false;
@@ -511,41 +526,12 @@ public final class Block extends Region {
 	 * * SVG Path * *
 	 ************************************************************/
 
-	private static final double INSERT_WIDTH = 5;
-	private static final double INSERT_OFFSET_Y = 10;
-	private static final double INSERT_HEIGHT = 10;
-	private static final double NEXT_WIDTH = 10;
-	private static final double NEXT_HEIGHT = 5;
-	private static final double NEXT_OFFSET_X = 10;
-	private static final double BRANCH_MIN_WIDTH = 10;
-
-	private String getSVGPath(List<BlockSlot> slots) {
-		if (slots.isEmpty())
-			return "";
-
-		ConnectionType connectionType = getConnectionType();
-		StringBuilder builder = new StringBuilder();
-		builder.append(getTopPath(connectionType, slots.get(0).getLineWidth()));
-		double y = 0;
-		for (int i = 0, size = slots.size(); i < size; i++) {
-			BlockSlot slot = slots.get(i);
-			switch (slot.getSlotType()) {
-			case BRANCH:
-				builder.append(getBranchPath(y, slot.getLineWidth(), slot.getLineHeight(),
-						i + 1 == size ? slot.getLineWidth() : slots.get(i + 1).getLineWidth()));
-				break;
-			case INSERT:
-				builder.append(getInsertPath(y, slot.getLineWidth()));
-				break;
-			default:
-				break;
-			}
-			if (slot.getSlotType() != SlotType.NEXT)
-				y += slot.getLineHeight();
-		}
-		builder.append(getBottomPath(connectionType, y));
-		return builder.toString();
-	}
+	public static final double INSERT_WIDTH = 5;
+	public static final double INSERT_OFFSET_Y = 10;
+	public static final double INSERT_HEIGHT = 10;
+	public static final double NEXT_WIDTH = 10;
+	public static final double NEXT_HEIGHT = 5;
+	public static final double NEXT_OFFSET_X = 10;
 
 	private String getTopPath(ConnectionType connectionType, double width) {
 		switch (connectionType) {
@@ -556,7 +542,7 @@ public final class Block extends Region {
 		case LEFT:
 			return new StringBuilder("M ").append(INSERT_WIDTH).append(" ").append(INSERT_HEIGHT + INSERT_OFFSET_Y)
 					.append(" H 0 V ").append(INSERT_HEIGHT).append(" H ").append(INSERT_WIDTH).append(" V 0 H ")
-					.append(width).toString();
+					.append(INSERT_WIDTH+width).toString();
 		default:
 			return new StringBuilder("M 0 0 H ").append(width).toString();
 		}
@@ -575,15 +561,30 @@ public final class Block extends Region {
 		}
 	}
 
-	private String getBranchPath(double y, double width, double height, double nextWidth) {
-		return new StringBuilder(" V ").append(y).append(" H ").append(width + NEXT_OFFSET_X + NEXT_WIDTH).append(" V ")
-				.append(y + NEXT_HEIGHT).append(" H ").append(width + NEXT_OFFSET_X).append(" V ").append(y)
-				.append(" H ").append(width).append(" V ").append(y + height).append(" H ").append(nextWidth)
+	private String getBranchPath(ConnectionType connectionType, double y, double width, double height, double nextWidth) {
+		switch (connectionType) {
+		case LEFT:
+			return new StringBuilder(" V ").append(y).append(" H ").append(INSERT_WIDTH+width + NEXT_OFFSET_X + NEXT_WIDTH).append(" V ")
+				.append(y + NEXT_HEIGHT).append(" H ").append(INSERT_WIDTH+width + NEXT_OFFSET_X).append(" V ").append(y)
+				.append(" H ").append(INSERT_WIDTH+width).append(" V ").append(y + height).append(" H ").append(INSERT_WIDTH+nextWidth)
 				.toString();
+		default:
+			return new StringBuilder(" V ").append(y).append(" H ").append(width + NEXT_OFFSET_X + NEXT_WIDTH).append(" V ")
+					.append(y + NEXT_HEIGHT).append(" H ").append(width + NEXT_OFFSET_X).append(" V ").append(y)
+					.append(" H ").append(width).append(" V ").append(y + height).append(" H ").append(nextWidth)
+					.toString();
+		}
 	}
 
-	private String getInsertPath(double y, double width) {
-		return new StringBuilder(" V ").append(y + INSERT_OFFSET_Y).append(" H ").append(width - INSERT_WIDTH)
-				.append(" V ").append(y + INSERT_OFFSET_Y + INSERT_HEIGHT).append(" H ").append(width).toString();
+	private String getInsertPath(ConnectionType connectionType, double y, double width) {
+		switch (connectionType) {
+		case LEFT:
+			return new StringBuilder(" V ").append(y + INSERT_OFFSET_Y).append(" H ").append(INSERT_WIDTH+width - INSERT_WIDTH)
+					.append(" V ").append(y + INSERT_OFFSET_Y + INSERT_HEIGHT).append(" H ").append(INSERT_WIDTH+width).toString();
+		default:
+			return new StringBuilder(" V ").append(y + INSERT_OFFSET_Y).append(" H ").append(width - INSERT_WIDTH)
+					.append(" V ").append(y + INSERT_OFFSET_Y + INSERT_HEIGHT).append(" H ").append(width).toString();
+		}
+
 	}
 }

@@ -3,7 +3,6 @@ package team.unstudio.jblockly.demo;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
-import javafx.scene.control.TextField;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
 import team.unstudio.jblockly.Block;
@@ -28,7 +27,7 @@ public class Main extends Application {
 		block.addNode(label);
 		// block.addNode("field", field);
 		block.addNode("insert", slot);
-		block.addNode(new Label("23333"));
+		block.addNode(new Label(""));
 		block.addNode(new BlockSlot(SlotType.BRANCH));
 		block.addNode(new Label("23333333333333333333"));
 		block.addNode(new BlockSlot());

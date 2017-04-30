@@ -10,6 +10,10 @@ import javafx.scene.layout.Region;
 
 public class BlockSlot extends Region {
 
+	public static final double BLOCK_SLOT_MIN_WIDTH=5;
+	public static final double BLOCK_SLOT_MIN_HEIGHT=30;
+	public static final double BRANCH_MIN_WIDTH = 20;
+	
 	public enum SlotType {
 		NONE, INSERT, BRANCH, NEXT
 	}
@@ -73,32 +77,32 @@ public class BlockSlot extends Region {
 
 	@Override
 	protected double computeMinWidth(double height) {
-		return block == null ? 0 : block.minWidth(height);
+		return block == null ? BLOCK_SLOT_MIN_WIDTH : block.minWidth(height);
 	}
 
 	@Override
 	protected double computeMinHeight(double width) {
-		return block == null ? 0 : block.minHeight(width);
+		return block == null ? BLOCK_SLOT_MIN_HEIGHT : block.minHeight(width);
 	}
 
 	@Override
 	protected double computePrefWidth(double height) {
-		return block == null ? 0 : block.prefWidth(height);
+		return block == null ? BLOCK_SLOT_MIN_WIDTH : block.prefWidth(height);
 	}
 
 	@Override
 	protected double computePrefHeight(double width) {
-		return block == null ? 0 : block.prefHeight(width);
+		return block == null ? BLOCK_SLOT_MIN_HEIGHT : block.prefHeight(width);
 	}
 
 	@Override
 	protected double computeMaxWidth(double height) {
-		return block == null ? 0 : block.maxWidth(height);
+		return block == null ? BLOCK_SLOT_MIN_WIDTH : block.maxWidth(height);
 	}
 
 	@Override
 	protected double computeMaxHeight(double width) {
-		return block == null ? 0 : block.maxHeight(width);
+		return block == null ? BLOCK_SLOT_MIN_HEIGHT : block.maxHeight(width);
 	}
 
 	double getLineHeight() {
@@ -110,7 +114,14 @@ public class BlockSlot extends Region {
 	}
 
 	double getLineWidth() {
-		return lineWidth;
+		switch (slotType) {
+		case BRANCH:
+			return lineWidth<BRANCH_MIN_WIDTH?BRANCH_MIN_WIDTH:lineWidth;
+		case INSERT:
+			return lineWidth+Block.INSERT_WIDTH;
+		default:
+			return lineWidth;
+		}
 	}
 
 	void setLineWidth(double lineWidth) {
