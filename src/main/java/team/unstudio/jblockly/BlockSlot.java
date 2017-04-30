@@ -79,9 +79,10 @@ public class BlockSlot extends Region {
 	protected void layoutChildren() {
 		if (block == null)
 			return;
-		layoutInArea(block, 0, 0, computeChildMinAreaWidth(block, -1, null, -1, false),
-				computeChildMinAreaHeight(block, -1, null, -1), 0, null, HPos.CENTER, VPos.CENTER);
+		layoutInArea(block, 0, 0, computeChildPrefAreaWidth(block, -1, null, -1, false),
+				computeChildPrefAreaHeight(block, -1, null, -1), 0, null, HPos.CENTER, VPos.CENTER);
 	}
+	
 
 	@Override
 	protected double computePrefWidth(double height) {

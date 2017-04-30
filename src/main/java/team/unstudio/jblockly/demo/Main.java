@@ -22,9 +22,11 @@ public class Main extends Application {
 		block2.setConnectionType(ConnectionType.LEFT);
 		block2.addNode(new Label("233333333333333333333333333"));
 		block2.addNode(new BlockSlot());
+		block2.addNode(new Label("233333333333333333333333333"));
+		block2.addNode(new BlockSlot());
 		
 		Block block3 = new Block();
-		block3.setConnectionType(ConnectionType.NONE);
+		block3.setConnectionType(ConnectionType.TOP);
 		block3.addNode(new Label("233333333333333333333333333"));
 		block3.addNode(new BlockSlot());
 		
@@ -32,12 +34,15 @@ public class Main extends Application {
 		slot.setSlotType(SlotType.INSERT);
 		slot.setBlock(block2);
 		
+		BlockSlot slot2 = new BlockSlot(SlotType.BRANCH);
+		//slot2.setBlock(block3);
+		
 		Block block = new Block();
 		block.setConnectionType(ConnectionType.TOPANDBUTTOM);
 		block.addNode(new Label("233333333333333333333333333"));
 		block.addNode("insert", slot);
 		block.addNode(new Label(""));
-		block.addNode(new BlockSlot(SlotType.BRANCH));
+		block.addNode(slot2);
 		block.addNode(new Label("23333333333333333333"));
 		block.addNode(new BlockSlot());
 		block.addNode(new Label("23333333333333333333333"));
@@ -45,7 +50,6 @@ public class Main extends Application {
 
 		BlockWorkspace workspace = new BlockWorkspace();
 		workspace.addBlock(block);
-		workspace.addBlock(block3);
 
 		Scene scene = new Scene(workspace);
 

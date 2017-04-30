@@ -217,21 +217,11 @@ public final class Block extends Region {
 		return super.getChildren();
 	}
 
-//	@Override
-//	protected double computePrefWidth(double height) {
-//		return svgPath.prefWidth(height);
-//	}
-//
-//	@Override
-//	protected double computePrefHeight(double width) {
-//		if(slots==null)
-//			return 0;
-//		
-//		double height = 0;
-//		for(BlockSlot slot:slots)
-//			height += slot.getLineHeight();
-//		return height;
-//	}
+	@Override
+	protected double computePrefHeight(double width) {
+		System.out.println(super.computePrefHeight(width));
+		return super.computePrefHeight(width);
+	}
 
 	@Override
 	public boolean contains(double localX, double localY) {
