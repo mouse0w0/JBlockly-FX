@@ -218,10 +218,29 @@ public final class Block extends Region {
 	}
 
 	@Override
-	protected double computePrefHeight(double width) {
-		System.out.println(super.computePrefHeight(width));
-		return super.computePrefHeight(width);
+	protected double computePrefWidth(double height) {
+		return super.computePrefWidth(height);
 	}
+	
+	@Override
+	protected double computePrefHeight(double width) {
+		List<Node> managed = new ArrayList<>(getManagedChildren());
+		managed.remove(svgPath);
+		return computeContentHeight(managed, width, false);
+	}
+	
+    private double computeContentHeight(List<Node> managedChildren, double width, boolean minimum) {
+        return sum(getAreaBounds(managedChildren, width,- 1, minimum)[0], managedChildren.size());
+    }
+    
+    private static double sum(double[] array, int size) {
+        int i = 0;
+        double res = 0;
+        while (i != size) {
+            res += array[i++];
+        }
+        return res;
+    }
 
 	@Override
 	public boolean contains(double localX, double localY) {
@@ -270,6 +289,8 @@ public final class Block extends Region {
 
 			double x = getConnectionType()==ConnectionType.LEFT?INSERT_WIDTH:0;
 			double y = 0;
+			
+			BlockSlot next = null;
 	
 			for (int i = 0, size = slots.size(); i < size; i++) {
 				BlockSlot slot = slots.get(i);
@@ -289,9 +310,15 @@ public final class Block extends Region {
 				}
 				if (slot.getSlotType() != SlotType.NEXT)
 					y += slot.getLineHeight();
+				else 
+					next = slot;
 			}
 			builder.append(getBottomPath(connectionType, y));
 			svgPath.setContent(builder.toString());
+			
+			if(next!=null)
+				y+=next.getLineHeight();
+			setHeight(y);
 		}
 
 		performingLayout = false;
@@ -300,7 +327,10 @@ public final class Block extends Region {
 	private void layoutLine(BlockSlot slot, List<Node> managed, double[][] actualAreaBounds, double left, double top,
 			double space, HPos hpos, VPos vpos) {
 		double x = left;
+		if(slot.getSlotType()==SlotType.BRANCH)
+			x+=BlockSlot.BRANCH_MIN_WIDTH;
 		double y = top;
+		
 		for (int i = slot.getFirstNode(), end = slot.getLastNode() - 1; i <= end; i++) {
 			Node child = managed.get(i);
 			layoutInArea(child, x, y, actualAreaBounds[0][i], slot.getLineHeight(), 0, getMargin(child), hpos, vpos);
