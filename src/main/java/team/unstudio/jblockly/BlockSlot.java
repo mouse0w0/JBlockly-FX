@@ -3,10 +3,7 @@ package team.unstudio.jblockly;
 import javafx.geometry.BoundingBox;
 import javafx.geometry.Bounds;
 import javafx.geometry.HPos;
-import javafx.geometry.Insets;
-import javafx.geometry.Orientation;
 import javafx.geometry.VPos;
-import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.layout.Region;
 
@@ -80,15 +77,14 @@ public class BlockSlot extends Region {
 	protected void layoutChildren() {
 		if (block == null)
 			return;
-		layoutInArea(block, 0, 0, computeChildPrefAreaWidth(block, -1, null, -1, false),
-				computeChildPrefAreaHeight(block, -1, null, -1), 0, null, HPos.CENTER, VPos.CENTER);
+		layoutInArea(block, 0, 0, prefWidth(-1), prefHeight(-1), 0, null, HPos.CENTER, VPos.CENTER);
 	}
 	
 
 	@Override
 	protected double computePrefWidth(double height) {
 		if(block!=null)
-			return block.computePrefWidth(height);
+			return block.prefWidth(height);
 		
 		switch (getSlotType()) {
 		case INSERT:
@@ -105,20 +101,19 @@ public class BlockSlot extends Region {
 	@Override
 	protected double computePrefHeight(double width) {
 		if(block!=null)
-			return block.computePrefHeight(width);
+			return block.prefHeight(width);
 		
 		switch (getSlotType()) {
 		case INSERT:
-			return INSERT_SLOT_BOUNDS.getMaxZ()+INSERT_SLOT_BOUNDS.getHeight();
+			return INSERT_SLOT_BOUNDS.getMaxY()+INSERT_SLOT_BOUNDS.getHeight();
 		case BRANCH:
 		case NEXT:
-			return NEXT_SLOT_BOUNDS.getMaxZ()+NEXT_SLOT_BOUNDS.getHeight();
+			return NEXT_SLOT_BOUNDS.getMaxY()+NEXT_SLOT_BOUNDS.getHeight();
 		case NONE:
 		default:
 			return BLOCK_SLOT_MIN_HEIGHT;
 		}
 	}
-
 
 	double getLineHeight() {
 		return lineHeight;
@@ -157,77 +152,5 @@ public class BlockSlot extends Region {
 
 	void setLastNode(int lastNode) {
 		this.lastNode = lastNode;
-	}
-
-	private double computeChildPrefAreaHeight(Node child, double prefBaselineComplement, Insets margin, double width) {
-		final boolean snap = isSnapToPixel();
-		double top = margin != null ? snapSpace(margin.getTop(), snap) : 0;
-		double bottom = margin != null ? snapSpace(margin.getBottom(), snap) : 0;
-
-		double alt = -1;
-		if (child.isResizable() && child.getContentBias() == Orientation.HORIZONTAL) { // height
-																						// depends
-																						// on
-																						// width
-			double left = margin != null ? snapSpace(margin.getLeft(), snap) : 0;
-			double right = margin != null ? snapSpace(margin.getRight(), snap) : 0;
-			alt = snapSize(boundedSize(child.minWidth(-1), width != -1 ? width - left - right : child.prefWidth(-1),
-					child.maxWidth(-1)));
-		}
-
-		if (prefBaselineComplement != -1) {
-			double baseline = child.getBaselineOffset();
-			if (child.isResizable() && baseline == BASELINE_OFFSET_SAME_AS_HEIGHT) {
-				// When baseline is same as height, the preferred height of the
-				// node will be above the baseline, so we need to add
-				// the preferred complement to it
-				return top + snapSize(boundedSize(child.minHeight(alt), child.prefHeight(alt), child.maxHeight(alt)))
-						+ bottom + prefBaselineComplement;
-			} else {
-				// For all other Nodes, it's just their baseline and the
-				// complement.
-				// Note that the complement already contain the Node's preferred
-				// (or fixed) height
-				return top + baseline + prefBaselineComplement + bottom;
-			}
-		} else {
-			return top + snapSize(boundedSize(child.minHeight(alt), child.prefHeight(alt), child.maxHeight(alt)))
-					+ bottom;
-		}
-	}
-
-	private double computeChildPrefAreaWidth(Node child, double baselineComplement, Insets margin, double height,
-			boolean fillHeight) {
-		final boolean snap = isSnapToPixel();
-		double left = margin != null ? snapSpace(margin.getLeft(), snap) : 0;
-		double right = margin != null ? snapSpace(margin.getRight(), snap) : 0;
-		double alt = -1;
-		if (height != -1 && child.isResizable() && child.getContentBias() == Orientation.VERTICAL) { // width
-																										// depends
-																										// on
-																										// height
-			double top = margin != null ? snapSpace(margin.getTop(), snap) : 0;
-			double bottom = margin != null ? snapSpace(margin.getBottom(), snap) : 0;
-			double bo = child.getBaselineOffset();
-			final double contentHeight = bo == BASELINE_OFFSET_SAME_AS_HEIGHT && baselineComplement != -1
-					? height - top - bottom - baselineComplement : height - top - bottom;
-			if (fillHeight) {
-				alt = snapSize(boundedSize(child.minHeight(-1), contentHeight, child.maxHeight(-1)));
-			} else {
-				alt = snapSize(boundedSize(child.minHeight(-1), child.prefHeight(-1),
-						Math.min(child.maxHeight(-1), contentHeight)));
-			}
-		}
-		return left + snapSize(boundedSize(child.minWidth(alt), child.prefWidth(alt), child.maxWidth(alt))) + right;
-	}
-
-	private static double boundedSize(double min, double pref, double max) {
-		double a = pref >= min ? pref : min;
-		double b = min >= max ? min : max;
-		return a <= b ? a : b;
-	}
-
-	private static double snapSpace(double value, boolean snapToPixel) {
-		return snapToPixel ? Math.round(value) : value;
 	}
 }

@@ -23,10 +23,47 @@ import javafx.scene.shape.SVGPath;
 import team.unstudio.jblockly.BlockSlot.SlotType;
 
 public final class Block extends Region {
+	
+	public static final double INSERT_WIDTH = 5;
+	public static final double INSERT_OFFSET_Y = 10;
+	public static final double INSERT_HEIGHT = 10;
+	public static final double NEXT_WIDTH = 10;
+	public static final double NEXT_HEIGHT = 5;
+	public static final double NEXT_OFFSET_X = 10;
+	
+	private static final String MARGIN_CONSTRAINT = "block-margin";
+
+	private static void setConstraint(Node node, Object key, Object value) {
+		if (value == null) {
+			node.getProperties().remove(key);
+		} else {
+			node.getProperties().put(key, value);
+		}
+		if (node.getParent() != null) {
+			node.getParent().requestLayout();
+		}
+	}
+
+	private static Object getConstraint(Node node, Object key) {
+		if (node.hasProperties()) {
+			Object value = node.getProperties().get(key);
+			if (value != null) {
+				return value;
+			}
+		}
+		return null;
+	}
+
+	public static void setMargin(Node child, Insets value) {
+		setConstraint(child, MARGIN_CONSTRAINT, value);
+	}
+
+	public static Insets getMargin(Node child) {
+		return (Insets) getConstraint(child, MARGIN_CONSTRAINT);
+	}
 
 	private final SVGPath svgPath;
 	private final Map<String, Node> nodeNames = new HashMap<>();
-	private List<BlockSlot> slots;
 
 	private BooleanProperty movable;
 
@@ -59,37 +96,7 @@ public final class Block extends Region {
 	private double tempOldX, tempOldY;
 	private boolean performingLayout, moving;
 	private double[][] tempArray;
-
-	private static final String MARGIN_CONSTRAINT = "block-margin";
-
-	private static void setConstraint(Node node, Object key, Object value) {
-		if (value == null) {
-			node.getProperties().remove(key);
-		} else {
-			node.getProperties().put(key, value);
-		}
-		if (node.getParent() != null) {
-			node.getParent().requestLayout();
-		}
-	}
-
-	private static Object getConstraint(Node node, Object key) {
-		if (node.hasProperties()) {
-			Object value = node.getProperties().get(key);
-			if (value != null) {
-				return value;
-			}
-		}
-		return null;
-	}
-
-	public static void setMargin(Node child, Insets value) {
-		setConstraint(child, MARGIN_CONSTRAINT, value);
-	}
-
-	public static Insets getMargin(Node child) {
-		return (Insets) getConstraint(child, MARGIN_CONSTRAINT);
-	}
+	private List<BlockSlot> slots;
 
 	public enum ConnectionType {
 		LEFT, TOP, BUTTOM, TOPANDBUTTOM, NONE
@@ -132,7 +139,7 @@ public final class Block extends Region {
 			moving = false;
 		});
 
-		setPickOnBounds(false); // 启用不规则图形判断,具体见contain方法
+		setPickOnBounds(false); // 启用不规则图形判断,具体见contains方法
 	}
 
 	public BlockWorkspace getWorkspace() {
@@ -226,21 +233,19 @@ public final class Block extends Region {
 	protected double computePrefHeight(double width) {
 		List<Node> managed = new ArrayList<>(getManagedChildren());
 		managed.remove(svgPath);
-		return computeContentHeight(managed, width, false);
+		
+		double[][] actualAreaBounds = getAreaBounds(managed, false);
+		List<BlockSlot> slots = getLineBounds(managed, actualAreaBounds, 0);
+		
+		if(slots.isEmpty())
+			return 0;
+		
+		double y = 0;
+		for(BlockSlot slot:slots)
+			y+=slot.getLineHeight();
+		
+		return y;
 	}
-	
-    private double computeContentHeight(List<Node> managedChildren, double width, boolean minimum) {
-        return sum(getAreaBounds(managedChildren, width,- 1, minimum)[0], managedChildren.size());
-    }
-    
-    private static double sum(double[] array, int size) {
-        int i = 0;
-        double res = 0;
-        while (i != size) {
-            res += array[i++];
-        }
-        return res;
-    }
 
 	@Override
 	public boolean contains(double localX, double localY) {
@@ -266,18 +271,17 @@ public final class Block extends Region {
 			return;
 		performingLayout = true;
 
-		layoutInArea(svgPath, 0, 0, computeChildPrefAreaWidth(svgPath, -1, null, -1, false), computeChildPrefAreaHeight(svgPath, -1, null, -1), 0,
-				HPos.CENTER, VPos.CENTER);
+		layoutInArea(svgPath, 0, 0, svgPath.prefWidth(-1), svgPath.prefHeight(-1), 0, HPos.CENTER, VPos.CENTER);
 
 		List<Node> managed = new ArrayList<>(getManagedChildren());
 		managed.remove(svgPath);
 
-		double hSpace = 0;
+		double hSpace = 5;
 		double vSpace = 5;
 		HPos hpos = HPos.LEFT;
 		VPos vpos = VPos.CENTER;
 
-		double[][] actualAreaBounds = getAreaBounds(managed, -1, -1, false);
+		double[][] actualAreaBounds = getAreaBounds(managed, false);
 		List<BlockSlot> slots = getLineBounds(managed, actualAreaBounds, hSpace);
 
 		if (slots.isEmpty()){
@@ -289,8 +293,6 @@ public final class Block extends Region {
 
 			double x = getConnectionType()==ConnectionType.LEFT?INSERT_WIDTH:0;
 			double y = 0;
-			
-			BlockSlot next = null;
 	
 			for (int i = 0, size = slots.size(); i < size; i++) {
 				BlockSlot slot = slots.get(i);
@@ -308,17 +310,12 @@ public final class Block extends Region {
 				default:
 					break;
 				}
+				
 				if (slot.getSlotType() != SlotType.NEXT)
 					y += slot.getLineHeight();
-				else 
-					next = slot;
 			}
 			builder.append(getBottomPath(connectionType, y));
 			svgPath.setContent(builder.toString());
-			
-			if(next!=null)
-				y+=next.getLineHeight();
-			setHeight(y);
 		}
 
 		performingLayout = false;
@@ -326,7 +323,7 @@ public final class Block extends Region {
 
 	private void layoutLine(BlockSlot slot, List<Node> managed, double[][] actualAreaBounds, double left, double top,
 			double space, HPos hpos, VPos vpos) {
-		double x = left;
+		double x = left+space;
 		if(slot.getSlotType()==SlotType.BRANCH)
 			x+=BlockSlot.BRANCH_MIN_WIDTH;
 		double y = top;
@@ -340,8 +337,8 @@ public final class Block extends Region {
 	}
 
 	private List<BlockSlot> getLineBounds(List<Node> managed, double[][] actualAreaBounds, double space) {
-		List<BlockSlot> temp = new ArrayList<>();
-		double tempWidth = 0, tempHeight = 0, tempMaxWidth = 0;
+		List<BlockSlot> temp = getTempList();
+		double tempWidth = space, tempHeight = 0, tempMaxWidth = 0;
 		int lastBranchOrNextBlock = -1, firstNode = 0;
 		for (int i = 0, size = managed.size(); i < size; i++) {
 			Node child = managed.get(i);
@@ -373,7 +370,7 @@ public final class Block extends Region {
 						replaceAllLineWidth(temp, lastBranchOrNextBlock + 1, tsize - 1, tempMaxWidth);
 				}
 
-				tempWidth = 0;
+				tempWidth = space;
 				tempHeight = 0;
 			} else {
 				tempWidth += actualAreaBounds[0][i] + space;
@@ -381,8 +378,14 @@ public final class Block extends Region {
 					tempHeight = actualAreaBounds[1][i];
 			}
 		}
-		this.slots = temp;
 		return temp;
+	}
+	
+	private List<BlockSlot> getTempList(){
+		if(slots == null)
+			slots = new ArrayList<>();
+		slots.clear();
+		return slots;
 	}
 
 	private void replaceAllLineWidth(List<BlockSlot> managed, int start, int end, double width) {
@@ -390,21 +393,17 @@ public final class Block extends Region {
 			managed.get(i).setLineWidth(width);
 	}
 
-	private double[][] getAreaBounds(List<Node> managed, double width, double height, boolean minimum) {
+	private double[][] getAreaBounds(List<Node> managed, boolean minimum) {
 		double[][] temp = getTempArray(managed.size());
-		final double insideWidth = width == -1 ? -1
-				: width - snapSpace(getInsets().getLeft()) - snapSpace(getInsets().getRight());
-		final double insideHeight = height == -1 ? -1
-				: height - snapSpace(getInsets().getTop()) - snapSpace(getInsets().getBottom());
 		for (int i = 0, size = managed.size(); i < size; i++) {
 			Node child = managed.get(i);
 			Insets margin = getMargin(child);
 			if (minimum) {
-				temp[0][i] = computeChildMinAreaWidth(child, -1, margin, insideHeight, false);
-				temp[1][i] = computeChildMinAreaHeight(child, -1, margin, insideWidth);
+				temp[0][i] = computeChildMinAreaWidth(child, -1, margin, -1, false);
+				temp[1][i] = computeChildMinAreaHeight(child, -1, margin, -1);
 			} else {
-				temp[0][i] = computeChildPrefAreaWidth(child, -1, margin, insideHeight, false);
-				temp[1][i] = computeChildPrefAreaHeight(child, -1, margin, insideWidth);
+				temp[0][i] = computeChildPrefAreaWidth(child, -1, margin, -1, false);
+				temp[1][i] = computeChildPrefAreaHeight(child, -1, margin, -1);
 			}
 		}
 		return temp;
@@ -548,13 +547,6 @@ public final class Block extends Region {
 	/************************************************************
 	 * * SVG Path * *
 	 ************************************************************/
-
-	public static final double INSERT_WIDTH = 5;
-	public static final double INSERT_OFFSET_Y = 10;
-	public static final double INSERT_HEIGHT = 10;
-	public static final double NEXT_WIDTH = 10;
-	public static final double NEXT_HEIGHT = 5;
-	public static final double NEXT_OFFSET_X = 10;
 
 	private String getTopPath(ConnectionType connectionType, double width) {
 		switch (connectionType) {
