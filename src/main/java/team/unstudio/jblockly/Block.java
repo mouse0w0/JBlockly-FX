@@ -67,11 +67,11 @@ public final class Block extends Region {
 		return (Insets) getConstraint(child, MARGIN_CONSTRAINT);
 	}
 	
-	public static void setName(Node child, String value) {
+	public static void setNodeName(Node child, String value) {
 		setConstraint(child, NAME_CONSTRAINT, value);
 	}
 
-	public static String getName(Node child) {
+	public static String getNodeName(Node child) {
 		return (String) getConstraint(child, NAME_CONSTRAINT);
 	}
 
@@ -288,7 +288,7 @@ public final class Block extends Region {
 		
 		_nameToNode.clear();
 		for(Node node:getChildren()){
-			String name = getName(node);
+			String name = getNodeName(node);
 			if(name!=null)
 				_nameToNode.put(name, node);
 		}
@@ -303,7 +303,7 @@ public final class Block extends Region {
 		if (getNameToNode().containsKey(name)) {
 			return;
 		}
-		setName(node, name);
+		setNodeName(node, name);
 		getChildren().add(node);
 	}
 
