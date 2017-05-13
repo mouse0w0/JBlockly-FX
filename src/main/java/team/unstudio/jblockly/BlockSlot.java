@@ -10,7 +10,7 @@ import javafx.scene.layout.Region;
 public class BlockSlot extends Region {
 
 	public static final Bounds INSERT_SLOT_BOUNDS = new BoundingBox(0, Block.INSERT_OFFSET_Y, Block.INSERT_WIDTH, Block.INSERT_HEIGHT);
-	public static final Bounds NEXT_SLOT_BOUNDS = new BoundingBox(Block.NEXT_OFFSET_X,0,Block.NEXT_WIDTH,Block.NEXT_HEIGHT);
+	public static final Bounds NEXT_SLOT_BOUNDS = new BoundingBox(Block.NEXT_OFFSET_X,0,Block.NEXT_WIDTH,Block.NEXT_HEIGHT+5);
 	public static final double BLOCK_SLOT_MIN_WIDTH=0;
 	public static final double BLOCK_SLOT_MIN_HEIGHT=30;
 	public static final double BRANCH_MIN_WIDTH = 20;
@@ -21,8 +21,6 @@ public class BlockSlot extends Region {
 
 	private SlotType slotType;
 	private Block block;
-	private double lineWidth, lineHeight;
-	private int firstNode, lastNode;
 
 	public BlockSlot() {
 		this(SlotType.NONE);
@@ -69,8 +67,8 @@ public class BlockSlot extends Region {
 			block = null;
 	}
 	
-	public void tryAddBlock(Block block,double x,double y){
-		
+	public boolean tryLinkBlock(Block block,double x,double y){
+		return false;
 	}
 
 	@Override
@@ -114,6 +112,9 @@ public class BlockSlot extends Region {
 			return BLOCK_SLOT_MIN_HEIGHT;
 		}
 	}
+	
+	private double lineWidth, lineHeight;
+	private int firstNode, lastNode;
 
 	double getLineHeight() {
 		return lineHeight;
