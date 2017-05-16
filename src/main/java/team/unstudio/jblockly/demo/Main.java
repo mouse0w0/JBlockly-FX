@@ -25,7 +25,7 @@ public class Main extends Application {
 				new Label("233333333333333333333333333"),new BlockSlot());
 		
 		Block block3 = new Block();
-		block3.setConnectionType(ConnectionType.TOP);
+		block3.setConnectionType(ConnectionType.LEFT);
 		block3.getChildren().addAll(new Label("233333333333333333333333333"),new BlockSlot());
 		
 		BlockSlot slot = new BlockSlot();
@@ -44,6 +44,7 @@ public class Main extends Application {
 
 		BlockWorkspace workspace = new BlockWorkspace();
 		workspace.addBlock(block);
+		workspace.addBlock(block3);
 
 		Scene scene = new Scene(workspace);
 

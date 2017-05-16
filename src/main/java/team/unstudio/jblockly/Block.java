@@ -199,7 +199,7 @@ public final class Block extends Region {
 		});
 		setOnMouseReleased(event -> {
 			moving = false;
-			getWorkspace().tryLinkBlock(this, event.getSceneX(), event.getSceneY());
+			getWorkspace().tryLinkBlock(this, event.getSceneX()- tempOldX, event.getSceneY()- tempOldY);
 		});
 
 		setPickOnBounds(false); // 启用不规则图形判断,具体见contains方法
@@ -272,9 +272,16 @@ public final class Block extends Region {
 	}
 	
 	public boolean tryLinkBlock(Block block,double x,double y){
+		if(block == this)
+			return false;
+		
+		if(!getLayoutBounds().contains(x, y))
+			return false;
+		
 		for(BlockSlot slot:_tempList)
 			if(slot.tryLinkBlock(block, x-slot.getLayoutX(), y-slot.getLayoutY()))
 				return true;
+		
 		return false;
 	}
 

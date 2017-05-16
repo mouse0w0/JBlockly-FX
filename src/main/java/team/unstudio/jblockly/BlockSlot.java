@@ -6,6 +6,7 @@ import javafx.geometry.HPos;
 import javafx.geometry.VPos;
 import javafx.scene.Parent;
 import javafx.scene.layout.Region;
+import team.unstudio.jblockly.Block.ConnectionType;
 
 public class BlockSlot extends Region {
 
@@ -51,15 +52,16 @@ public class BlockSlot extends Region {
 		return block;
 	}
 
-	public void setBlock(Block block) {
-		if (getSlotType() == SlotType.NONE)
-			return;
+	public boolean setBlock(Block block) {
+		if(!isCanLinkBlock(block))
+			return false;
 		
 		if (this.block != null)
 			this.block.addToWorkspace();
 		if (block != null)
 			getChildren().add(block);
 		this.block = block;
+		return true;
 	}
 
 	public void validateBlock() {
@@ -68,7 +70,27 @@ public class BlockSlot extends Region {
 	}
 	
 	public boolean tryLinkBlock(Block block,double x,double y){
-		return false;
+		if(!contains(x, y))
+			return false;
+		
+		return setBlock(block);
+	}
+	
+	public boolean isCanLinkBlock(Block block){
+		ConnectionType connectionType = block.getConnectionType();
+		switch (getSlotType()) {
+		case NEXT:
+		case BRANCH:
+			if(connectionType==ConnectionType.TOP||connectionType==ConnectionType.TOPANDBUTTOM)
+				return true;
+			else 
+				return false;
+		case INSERT:
+			if(connectionType==ConnectionType.LEFT)
+				return true;
+		default:
+			return false;
+		}
 	}
 
 	@Override
