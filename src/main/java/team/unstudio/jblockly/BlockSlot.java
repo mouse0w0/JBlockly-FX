@@ -51,6 +51,10 @@ public class BlockSlot extends Region {
 	public Block getBlock() {
 		return block;
 	}
+	
+	public boolean hasBlock(){
+		return block != null;
+	}
 
 	public boolean setBlock(Block block) {
 		if(!isCanLinkBlock(block))
@@ -70,10 +74,27 @@ public class BlockSlot extends Region {
 	}
 	
 	public boolean tryLinkBlock(Block block,double x,double y){
-		if(!contains(x, y))
-			return false;
+		switch (getSlotType()) {
+		case INSERT:
+			if(INSERT_SLOT_BOUNDS.contains(x, y))
+				return setBlock(block);
+			break;
+		case NEXT:
+			if(NEXT_SLOT_BOUNDS.contains(x, y))
+				return setBlock(block);
+			break;
+		case BRANCH:
+			if(NEXT_SLOT_BOUNDS.contains(x-getLineWidth(), y))
+				return setBlock(block);
+			break;
+		default:
+			break;
+		}
 		
-		return setBlock(block);
+		if(hasBlock()&&contains(x, y))
+			return this.block.tryLinkBlock(block, x, y);
+		
+		return false;
 	}
 	
 	public boolean isCanLinkBlock(Block block){
@@ -95,15 +116,14 @@ public class BlockSlot extends Region {
 
 	@Override
 	protected void layoutChildren() {
-		if (block == null)
-			return;
-		layoutInArea(block, 0, 0, prefWidth(-1), prefHeight(-1), 0, null, HPos.CENTER, VPos.CENTER);
+		if (hasBlock())
+			layoutInArea(block, 0, 0, prefWidth(-1), prefHeight(-1), 0, null, HPos.CENTER, VPos.CENTER);
 	}
 	
 
 	@Override
 	protected double computePrefWidth(double height) {
-		if(block!=null)
+		if(hasBlock())
 			return block.prefWidth(height);
 		
 		switch (getSlotType()) {
@@ -120,7 +140,7 @@ public class BlockSlot extends Region {
 
 	@Override
 	protected double computePrefHeight(double width) {
-		if(block!=null)
+		if(hasBlock())
 			return block.prefHeight(width);
 		
 		switch (getSlotType()) {
@@ -144,6 +164,10 @@ public class BlockSlot extends Region {
 
 	void setLineHeight(double lineHeight) {
 		this.lineHeight = lineHeight;
+	}
+	
+	double getOriginalLineWidth(){
+		return lineWidth;
 	}
 
 	double getLineWidth() {

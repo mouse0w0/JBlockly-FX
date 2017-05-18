@@ -3,6 +3,7 @@ package team.unstudio.jblockly.demo;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
+import javafx.scene.shape.Rectangle;
 import javafx.stage.Stage;
 import team.unstudio.jblockly.Block;
 import team.unstudio.jblockly.BlockSlot;
@@ -21,12 +22,11 @@ public class Main extends Application {
 		Block block2 = new Block();
 		block2.setConnectionType(ConnectionType.LEFT);
 		block2.getChildren().addAll(
-				new Label("233333333333333333333333333"),new BlockSlot(),
-				new Label("233333333333333333333333333"),new BlockSlot());
+				new Label("233333333333333333333333333"),new BlockSlot(SlotType.INSERT));
 		
 		Block block3 = new Block();
 		block3.setConnectionType(ConnectionType.LEFT);
-		block3.getChildren().addAll(new Label("233333333333333333333333333"),new BlockSlot());
+		block3.getChildren().addAll(new Label("233333333333333333333333333"),new BlockSlot(SlotType.INSERT));
 		
 		BlockSlot slot = new BlockSlot();
 		slot.setSlotType(SlotType.INSERT);

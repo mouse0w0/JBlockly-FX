@@ -332,7 +332,25 @@ public final class Block extends Region {
 
 	@Override
 	protected double computePrefWidth(double height) {
-		return super.computePrefWidth(height);
+		List<Node> managed = new ArrayList<>(getManagedChildren());
+		managed.remove(svgPath);
+		
+		double vSpace = getVerticalSpacing();
+		double hSpace = getHorizontalSpacing();
+		double[][] actualAreaBounds = getTempArray(managed.size());;
+		List<BlockSlot> slots = getLineBounds(managed, vSpace, hSpace, false, actualAreaBounds);
+		
+		if(slots.isEmpty())
+			return 0;
+		
+		double width = 0;
+		for(BlockSlot slot:slots){
+			double lineWidth = slot.getOriginalLineWidth()+actualAreaBounds[0][slot.getLastNode()];
+			if(width<lineWidth)
+				width = lineWidth;
+		}
+		
+		return width;
 	}
 	
 	@Override
@@ -348,11 +366,11 @@ public final class Block extends Region {
 		if(slots.isEmpty())
 			return 0;
 		
-		double y = 0;
+		double height = 0;
 		for(BlockSlot slot:slots)
-			y+=slot.getLineHeight() + vSpace;
+			height+=slot.getLineHeight() + vSpace;
 		
-		return y;
+		return height;
 	}
 
 	@Override
