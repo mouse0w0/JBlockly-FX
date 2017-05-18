@@ -1,59 +1,40 @@
 package team.unstudio.jblockly;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import javafx.scene.Parent;
 import javafx.scene.layout.Pane;
 
 public class BlockWorkspace extends Pane {
 
 	public void addBlock(Block block) {
-		Parent parent = block.getParent();
-		if(parent==null) {
+		if (block.getParent()!=null&&block.getWorkspace().equals(this)) {
+			block.addToWorkspace();
+		} else {
 			getChildren().add(block);
 			block.setLayoutX(0);
 			block.setLayoutY(0);
-		}else if (parent instanceof BlockWorkspace) {
-			if (!parent.equals(this)) {
-				getChildren().add(block);
-				block.setLayoutX(0);
-				block.setLayoutY(0);
-			}
-		} else {
-			if (block.getWorkspace().equals(this)) {
-				double x = block.getLayoutX(), y = block.getLayoutY();
-				while (!(parent instanceof BlockWorkspace)) {
-					x += parent.getLayoutX();
-					y += parent.getLayoutY();
-					parent = parent.getParent();
-				}
-
-				((BlockWorkspace) parent).getChildren().add(block);
-				block.setLayoutX(x);
-				block.setLayoutY(y);
-			} else {
-				getChildren().add(block);
-				block.setLayoutX(0);
-				block.setLayoutY(0);
-			}
 		}
-	}
-
-	public static void addBlockToWorkspace(Block block) {
-		Parent parent = block.getParent();
-		if (parent == null)
-			return;
-		if (parent instanceof BlockWorkspace)
-			return;
-
-		double x = block.getLayoutX(), y = block.getLayoutY();
-		while (!(parent instanceof BlockWorkspace)) {
-			x += parent.getLayoutX();
-			y += parent.getLayoutY();
-			parent = parent.getParent();
-		}
-
-		((BlockWorkspace) parent).getChildren().add(block);
-		block.setLayoutX(x);
-		block.setLayoutY(y);
 	}
 	
+	public List<Block> getBlocks() {
+		return getManagedChildren().stream().filter(node -> node instanceof Block)
+				.collect(Collectors.toCollection(ArrayList<Block>::new));
+	}
+	
+	public void tryLinkBlock(Block block,double sceneX,double sceneY){
+		double x = sceneX-getLayoutX(),y = sceneY-getLayoutY();
+		Parent parent = getParent();
+		while(parent!=null){
+			x-=parent.getLayoutX();
+			y-=parent.getLayoutY();
+			parent = parent.getParent();
+		}
+		
+		for(Block b:getBlocks())
+			if(b.tryLinkBlock(block, x-b.getLayoutX(), y-b.getLayoutY()))
+				return;
+	}
 }

@@ -6,11 +6,12 @@ import javafx.geometry.HPos;
 import javafx.geometry.VPos;
 import javafx.scene.Parent;
 import javafx.scene.layout.Region;
+import team.unstudio.jblockly.Block.ConnectionType;
 
 public class BlockSlot extends Region {
 
 	public static final Bounds INSERT_SLOT_BOUNDS = new BoundingBox(0, Block.INSERT_OFFSET_Y, Block.INSERT_WIDTH, Block.INSERT_HEIGHT);
-	public static final Bounds NEXT_SLOT_BOUNDS = new BoundingBox(Block.NEXT_OFFSET_X,0,Block.NEXT_WIDTH,Block.NEXT_HEIGHT);
+	public static final Bounds NEXT_SLOT_BOUNDS = new BoundingBox(Block.NEXT_OFFSET_X,0,Block.NEXT_WIDTH,Block.NEXT_HEIGHT+5);
 	public static final double BLOCK_SLOT_MIN_WIDTH=0;
 	public static final double BLOCK_SLOT_MIN_HEIGHT=30;
 	public static final double BRANCH_MIN_WIDTH = 20;
@@ -21,8 +22,6 @@ public class BlockSlot extends Region {
 
 	private SlotType slotType;
 	private Block block;
-	private double lineWidth, lineHeight;
-	private int firstNode, lastNode;
 
 	public BlockSlot() {
 		this(SlotType.NONE);
@@ -52,16 +51,21 @@ public class BlockSlot extends Region {
 	public Block getBlock() {
 		return block;
 	}
+	
+	public boolean hasBlock(){
+		return block != null;
+	}
 
-	public void setBlock(Block block) {
-		if (getSlotType() == SlotType.NONE)
-			return;
+	public boolean setBlock(Block block) {
+		if(!isCanLinkBlock(block))
+			return false;
 		
 		if (this.block != null)
 			this.block.addToWorkspace();
 		if (block != null)
 			getChildren().add(block);
 		this.block = block;
+		return true;
 	}
 
 	public void validateBlock() {
@@ -69,21 +73,57 @@ public class BlockSlot extends Region {
 			block = null;
 	}
 	
-	public void tryAddBlock(Block block,double x,double y){
+	public boolean tryLinkBlock(Block block,double x,double y){
+		switch (getSlotType()) {
+		case INSERT:
+			if(INSERT_SLOT_BOUNDS.contains(x, y))
+				return setBlock(block);
+			break;
+		case NEXT:
+			if(NEXT_SLOT_BOUNDS.contains(x, y))
+				return setBlock(block);
+			break;
+		case BRANCH:
+			if(NEXT_SLOT_BOUNDS.contains(x-getLineWidth(), y))
+				return setBlock(block);
+			break;
+		default:
+			break;
+		}
 		
+		if(hasBlock()&&contains(x, y))
+			return this.block.tryLinkBlock(block, x, y);
+		
+		return false;
+	}
+	
+	public boolean isCanLinkBlock(Block block){
+		ConnectionType connectionType = block.getConnectionType();
+		switch (getSlotType()) {
+		case NEXT:
+		case BRANCH:
+			if(connectionType==ConnectionType.TOP||connectionType==ConnectionType.TOPANDBUTTOM)
+				return true;
+			else 
+				return false;
+		case INSERT:
+			if(connectionType==ConnectionType.LEFT)
+				return true;
+		default:
+			return false;
+		}
 	}
 
 	@Override
 	protected void layoutChildren() {
-		if (block == null)
-			return;
-		layoutInArea(block, 0, 0, prefWidth(-1), prefHeight(-1), 0, null, HPos.CENTER, VPos.CENTER);
+		if (hasBlock())
+			layoutInArea(block, 0, 0, prefWidth(-1), prefHeight(-1), 0, null, HPos.CENTER, VPos.CENTER);
 	}
 	
 
 	@Override
 	protected double computePrefWidth(double height) {
-		if(block!=null)
+		if(hasBlock())
 			return block.prefWidth(height);
 		
 		switch (getSlotType()) {
@@ -100,7 +140,7 @@ public class BlockSlot extends Region {
 
 	@Override
 	protected double computePrefHeight(double width) {
-		if(block!=null)
+		if(hasBlock())
 			return block.prefHeight(width);
 		
 		switch (getSlotType()) {
@@ -114,6 +154,9 @@ public class BlockSlot extends Region {
 			return BLOCK_SLOT_MIN_HEIGHT;
 		}
 	}
+	
+	private double lineWidth, lineHeight;
+	private int firstNode, lastNode;
 
 	double getLineHeight() {
 		return lineHeight;
@@ -121,6 +164,10 @@ public class BlockSlot extends Region {
 
 	void setLineHeight(double lineHeight) {
 		this.lineHeight = lineHeight;
+	}
+	
+	double getOriginalLineWidth(){
+		return lineWidth;
 	}
 
 	double getLineWidth() {
