@@ -1,34 +1,69 @@
 package team.unstudio.jblockly;
 
-import javafx.geometry.BoundingBox;
-import javafx.geometry.Bounds;
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.ObjectPropertyBase;
+import javafx.beans.property.ReadOnlyObjectProperty;
+import javafx.beans.property.ReadOnlyObjectWrapper;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.geometry.HPos;
 import javafx.geometry.VPos;
 import javafx.scene.Parent;
 import javafx.scene.layout.Region;
-import team.unstudio.jblockly.Block.ConnectionType;
 
-public class BlockSlot extends Region {
+public class BlockSlot extends Region implements BlockGlobal{
 
-	public static final Bounds INSERT_SLOT_BOUNDS = new BoundingBox(0, Block.INSERT_OFFSET_Y, Block.INSERT_WIDTH, Block.INSERT_HEIGHT);
-	public static final Bounds NEXT_SLOT_BOUNDS = new BoundingBox(Block.NEXT_OFFSET_X,0,Block.NEXT_WIDTH,Block.NEXT_HEIGHT+5);
-	public static final double BLOCK_SLOT_MIN_WIDTH=0;
-	public static final double BLOCK_SLOT_MIN_HEIGHT=30;
-	public static final double BRANCH_MIN_WIDTH = 20;
-	
-	public enum SlotType {
-		NONE, INSERT, BRANCH, NEXT
+	private ObjectProperty<SlotType> slotType;
+	public final ObjectProperty<SlotType> slotTypeProperty(){
+		if(slotType==null){
+			slotType = new ObjectPropertyBase<SlotType>() {
+
+				@Override
+				public Object getBean() {
+					return BlockSlot.this;
+				}
+
+				@Override
+				public String getName() {
+					return "slot";
+				}
+			};
+		}
+		return slotType;
 	}
-
-	private SlotType slotType;
-	private Block block;
+	public SlotType getSlotType() {return slotType==null?SlotType.NONE:slotType.get();}
+	public void setSlotType(SlotType value) {slotTypeProperty().set(value);}
+	
+	private ReadOnlyObjectWrapper<Block> block;
+	private final ReadOnlyObjectWrapper<Block> blockPropertyImpl(){
+		if(block == null){
+			block = new ReadOnlyObjectWrapper<Block>(BlockSlot.this,"block"){
+				@Override
+				protected void invalidated() {
+					if(isNotNull().get())
+						get().parentProperty().addListener(new ChangeListener<Parent>() {
+							@Override
+							public void changed(ObservableValue<? extends Parent> observable, Parent oldValue,
+									Parent newValue) {
+								observable.removeListener(this);
+								set(null);
+							}
+						});
+				}
+			};
+		}
+		return block;
+	}
+	public final ReadOnlyObjectProperty<Block> blockProperty(){return blockPropertyImpl().getReadOnlyProperty();}
+	public final Block getBlock() {return block==null?null:block.get();}
+	public final boolean hasBlock(){return blockPropertyImpl().isNotNull().get();}
 
 	public BlockSlot() {
 		this(SlotType.NONE);
 	}
 
 	public BlockSlot(SlotType slotType) {
-		this.slotType = slotType;
+		setSlotType(slotType);
 	}
 	
 	public BlockSlot(SlotType slotType,Block block) {
@@ -45,37 +80,18 @@ public class BlockSlot extends Region {
 			return null;
 	}
 
-	public SlotType getSlotType() {
-		return slotType;
-	}
-
-	public void setSlotType(SlotType slotType) {
-		this.slotType = slotType;
-	}
-
-	public Block getBlock() {
-		return block;
-	}
-	
-	public boolean hasBlock(){
-		return block != null;
-	}
-
 	public boolean setBlock(Block block) {
 		if(!isCanLinkBlock(block))
 			return false;
 		
-		if (this.block != null)
-			this.block.addToWorkspace();
+		ReadOnlyObjectWrapper<Block> blockWrapper = blockPropertyImpl();
+		if (hasBlock())
+			blockWrapper.get().addToWorkspace();
 		if (block != null)
 			getChildren().add(block);
-		this.block = block;
+		
+		blockWrapper.set(block);
 		return true;
-	}
-
-	public void validateBlock() {
-		if (block != null && block.getParent() != this)
-			block = null;
 	}
 	
 	public boolean tryLinkBlock(Block block,double x,double y){
@@ -85,9 +101,6 @@ public class BlockSlot extends Region {
 				return setBlock(block);
 			break;
 		case NEXT:
-			if(NEXT_SLOT_BOUNDS.contains(x, y))
-				return setBlock(block);
-			break;
 		case BRANCH:
 			if(NEXT_SLOT_BOUNDS.contains(x, y))
 				return setBlock(block);
@@ -96,42 +109,26 @@ public class BlockSlot extends Region {
 			break;
 		}
 		
-		if(hasBlock()&&contains(x, y))
-			return this.block.tryLinkBlock(block, x, y);
+		if(hasBlock())
+			return getBlock().tryLinkBlock(block, x, y);
 		
 		return false;
 	}
 	
 	public boolean isCanLinkBlock(Block block){
-		ConnectionType connectionType = block.getConnectionType();
-		switch (getSlotType()) {
-		case NEXT:
-		case BRANCH:
-			if(connectionType==ConnectionType.TOP||connectionType==ConnectionType.TOPANDBOTTOM)
-				return true;
-			else 
-				return false;
-		case INSERT:
-			if(connectionType==ConnectionType.LEFT)
-				return true;
-			else
-				return false;
-		default:
-			return false;
-		}
+		return getSlotType().isCanBeConnection(block.getConnectionType());
 	}
 
 	@Override
 	protected void layoutChildren() {
 		if (hasBlock())
-			layoutInArea(block, 0, 0, prefWidth(-1), prefHeight(-1), 0, null, HPos.CENTER, VPos.CENTER);
+			layoutInArea(getChildren().get(0), 0, 0, prefWidth(-1), prefHeight(-1), 0, null, HPos.CENTER, VPos.CENTER);
 	}
-	
 
 	@Override
 	protected double computePrefWidth(double height) {
 		if(hasBlock())
-			return block.prefWidth(height);
+			return getBlock().prefWidth(height);
 		
 		switch (getSlotType()) {
 		case INSERT:
@@ -139,7 +136,6 @@ public class BlockSlot extends Region {
 		case BRANCH:
 		case NEXT:
 			return NEXT_SLOT_BOUNDS.getMaxX()+NEXT_SLOT_BOUNDS.getWidth();
-		case NONE:
 		default:
 			return BLOCK_SLOT_MIN_WIDTH;
 		}
@@ -148,7 +144,7 @@ public class BlockSlot extends Region {
 	@Override
 	protected double computePrefHeight(double width) {
 		if(hasBlock())
-			return block.prefHeight(width);
+			return getBlock().prefHeight(width);
 		
 		switch (getSlotType()) {
 		case INSERT:
@@ -156,7 +152,6 @@ public class BlockSlot extends Region {
 		case BRANCH:
 		case NEXT:
 			return NEXT_SLOT_BOUNDS.getMaxY()+NEXT_SLOT_BOUNDS.getHeight();
-		case NONE:
 		default:
 			return BLOCK_SLOT_MIN_HEIGHT;
 		}
@@ -178,7 +173,7 @@ public class BlockSlot extends Region {
 	}
 	
 	double getLayoutLineWidth(){
-		switch (slotType) {
+		switch (getSlotType()) {
 		case BRANCH:
 			return lineWidth<BRANCH_MIN_WIDTH?BRANCH_MIN_WIDTH:lineWidth;
 		default:
@@ -187,11 +182,11 @@ public class BlockSlot extends Region {
 	}
 
 	double getLineWidth() {
-		switch (slotType) {
+		switch (getSlotType()) {
 		case BRANCH:
 			return lineWidth<BRANCH_MIN_WIDTH?BRANCH_MIN_WIDTH:lineWidth;
 		case INSERT:
-			return lineWidth+Block.INSERT_WIDTH;
+			return lineWidth+INSERT_WIDTH;
 		default:
 			return lineWidth;
 		}

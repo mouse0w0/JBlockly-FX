@@ -7,33 +7,36 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.sun.javafx.css.converters.EnumConverter;
+import com.sun.javafx.css.converters.SizeConverter;
+
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.BooleanPropertyBase;
 import javafx.beans.property.DoubleProperty;
-import javafx.beans.property.DoublePropertyBase;
 import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.ReadOnlyBooleanProperty;
+import javafx.beans.property.ReadOnlyBooleanWrapper;
 import javafx.collections.ObservableList;
+import javafx.css.CssMetaData;
+import javafx.css.Styleable;
+import javafx.css.StyleableDoubleProperty;
+import javafx.css.StyleableObjectProperty;
+import javafx.css.StyleableProperty;
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
 import javafx.geometry.Point2D;
+import javafx.geometry.Pos;
 import javafx.geometry.VPos;
 import javafx.scene.Node;
 import javafx.scene.Parent;
+import javafx.scene.layout.Pane;
 import javafx.scene.layout.Region;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
 import javafx.scene.shape.SVGPath;
-import team.unstudio.jblockly.BlockSlot.SlotType;
 
-public final class Block extends Region {
-	
-	public static final double INSERT_WIDTH = 5;
-	public static final double INSERT_OFFSET_Y = 10;
-	public static final double INSERT_HEIGHT = 10;
-	public static final double NEXT_WIDTH = 10;
-	public static final double NEXT_HEIGHT = 5;
-	public static final double NEXT_OFFSET_X = 10;
+public class Block extends Region implements BlockGlobal{
 	
 	private static final String MARGIN_CONSTRAINT = "block-margin";
 	private static final String NAME_CONSTRAINT = "block-name";
@@ -94,21 +97,26 @@ public final class Block extends Region {
 		return movable;
 	}
 	public boolean isMovable() {return movableProperty().get();}
-	public void setMovable(boolean movable) {movableProperty().set(movable);}
+	public void setMovable(boolean value) {movableProperty().set(value);}
 	
-	private DoubleProperty verticalSpacing;
-	public final DoubleProperty verticalSpacingProperty(){
-		if(verticalSpacing == null){
-			verticalSpacing = new DoublePropertyBase(0) {
+	private DoubleProperty vSpacing;
+	public final DoubleProperty vSpacingProperty(){
+		if(vSpacing == null){
+			vSpacing = new StyleableDoubleProperty() {
 				
 				@Override
-				protected void invalidated() {
+				public void invalidated() {
 					requestLayout();
 				}
 				
+                @Override
+                public CssMetaData<Block, Number> getCssMetaData() {
+                    return StyleableProperties.V_SPACING;
+                }
+				
 				@Override
 				public String getName() {
-					return "verticalSpacing";
+					return "vSpacing";
 				}
 				
 				@Override
@@ -117,24 +125,29 @@ public final class Block extends Region {
 				}
 			};
 		}
-		return verticalSpacing;
+		return vSpacing;
 	}
-	public final double getVerticalSpacing(){return verticalSpacingProperty().get();}
-	public final void setVerticalSpacing(double value){verticalSpacingProperty().set(value);}
+	public final double getVSpacing(){return vSpacing==null?0:vSpacing.get();}
+	public final void setVSpacing(double value){vSpacingProperty().set(value);}
 	
-	private DoubleProperty horizontalSpacing;
-	public final DoubleProperty horizontalSpacingProperty(){
-		if(horizontalSpacing == null){
-			horizontalSpacing = new DoublePropertyBase(0) {
+	private DoubleProperty hSpacing;
+	public final DoubleProperty hSpacingProperty(){
+		if(hSpacing == null){
+			hSpacing = new StyleableDoubleProperty() {
 				
 				@Override
-				protected void invalidated() {
+				public void invalidated() {
 					requestLayout();
 				}
 				
+                @Override
+                public CssMetaData<Block, Number> getCssMetaData() {
+                    return StyleableProperties.H_SPACING;
+                }
+				
 				@Override
 				public String getName() {
-					return "horizontalSpacing";
+					return "hSpacing";
 				}
 				
 				@Override
@@ -143,38 +156,118 @@ public final class Block extends Region {
 				}
 			};
 		}
-		return horizontalSpacing;
+		return hSpacing;
 	}
-	public final double getHorizontalSpacing(){return horizontalSpacingProperty().get();}
-	public final void setHorizontalSpacing(double value){horizontalSpacingProperty().set(value);}
+	public final double getHSpacing(){return hSpacing==null?0:hSpacing.get();}
+	public final void setHSpacing(double value){hSpacingProperty().set(value);}
+	
+	private ObjectProperty<Pos> alignment;
+    public final ObjectProperty<Pos> alignmentProperty() {
+        if (alignment == null) {
+            alignment = new StyleableObjectProperty<Pos>(Pos.TOP_LEFT) {
+                @Override
+                public void invalidated() {
+                    requestLayout();
+                }
 
-	private boolean moving;
-	
-	public final boolean isMoving(){
+                @Override
+                public CssMetaData<Block, Pos> getCssMetaData() {
+                    return StyleableProperties.ALIGNMENT;
+                }
+
+                @Override
+                public Object getBean() {
+                    return Block.this;
+                }
+
+                @Override
+                public String getName() {
+                    return "alignment";
+                }
+            };
+        }
+        return alignment;
+    }
+    public final void setAlignment(Pos value) { alignmentProperty().set(value); }
+    public final Pos getAlignment() { return alignment == null ? Pos.TOP_LEFT : alignment.get(); }
+    private Pos getAlignmentInternal() {
+        Pos localPos = getAlignment();
+        return localPos == null ? Pos.TOP_LEFT : localPos;
+    }
+
+	private ReadOnlyBooleanWrapper moving;
+	private final ReadOnlyBooleanWrapper movingPropertyImpl(){
+		if(moving==null){
+			moving = new ReadOnlyBooleanWrapper(this, "moving");
+		}
 		return moving;
 	}
+	private final void setMoving(boolean moving){movingPropertyImpl().set(moving);}
+	public final boolean isMoving(){return moving==null?false:moving.get();}
+	public final ReadOnlyBooleanProperty movingProperty(){return movingPropertyImpl().getReadOnlyProperty();}
+	
+	private ObjectProperty<ConnectionType> connectionType;
+	public final ObjectProperty<ConnectionType> connectionTypeProperty(){
+		if(connectionType==null){
+			connectionType = new StyleableObjectProperty<ConnectionType>() {
+                @Override
+                public void invalidated() {
+                    requestLayout();
+                }
+                
+				@Override
+				public CssMetaData<? extends Styleable, ConnectionType> getCssMetaData() {
+					return StyleableProperties.CONNECTION;
+				}
+
+				@Override
+				public Object getBean() {
+					return Block.this;
+				}
+
+				@Override
+				public String getName() {
+					return "connection";
+				}
+			};
+		}
+		return connectionType;
+	}
+	public ConnectionType getConnectionType() {return connectionType==null?ConnectionType.NONE:connectionTypeProperty().get();}
+	public void setConnectionType(ConnectionType value) {connectionTypeProperty().set(value);}
 	
 	private final SVGPath svgPath;
+	public final SVGPath getSVGPath(){return svgPath;}
+	
+	public final ObjectProperty<Paint> fillProperty() {//TODO:Support CSS
+		return svgPath.fillProperty();
+	}
+	
+	public final Paint getFill(){
+		return svgPath.getFill();
+	}
+	
+	public final void setFill(Paint value){
+		svgPath.setFill(value);
+	}
+	
+	public final ObjectProperty<Paint> strokeProperty() {//TODO:Support CSS
+		return svgPath.strokeProperty();
+	}
+	
+	public final Paint getStroke(){
+		return svgPath.getStroke();
+	}
+	
+	public final void setStroke(Paint value){
+		svgPath.setStroke(value);
+	}
 	
 	private double tempOldX, tempOldY;
 	private boolean performingLayout;
-	private double[][] _tempArray;
-	private List<BlockSlot> _tempList;
-	private Map<String, Node> _nameToNode;
-
-	public enum ConnectionType {
-		LEFT, TOP, BUTTOM, TOPANDBOTTOM, NONE
-	}
-
-	private ConnectionType connectionType = ConnectionType.NONE;
-
-	public ConnectionType getConnectionType() {
-		return connectionType;
-	}
-
-	public void setConnectionType(ConnectionType connectionType) {
-		this.connectionType = connectionType;
-	}
+	private double[][] tempArray;
+	private List<BlockSlot> tempList;
+	private Map<String, Node> cacheNameToNode;
 
 	public Block() {
 		svgPath = new SVGPath();
@@ -188,13 +281,13 @@ public final class Block extends Region {
 			
 			tempOldX = event.getSceneX() - getLayoutX();
 			tempOldY = event.getSceneY() - getLayoutY();
-
-			moving = true;
+			
+			setMoving(true);
 			
 			event.consume();
 		});
 		setOnMouseDragged(event -> {
-			if (!moving)
+			if (!isMoving())
 				return;
 			setLayoutX(event.getSceneX() - tempOldX);
 			setLayoutY(event.getSceneY() - tempOldY);
@@ -202,16 +295,16 @@ public final class Block extends Region {
 			event.consume();
 		});
 		setOnMouseReleased(event -> {
-			moving = false;
+			setMoving(true);
 			
 			double x = event.getSceneX()- tempOldX, y = event.getSceneY()- tempOldY;
 			switch(this.getConnectionType()){
 				case TOP:
 				case TOPANDBOTTOM:
-					getWorkspace().tryLinkBlock(this,x+NEXT_OFFSET_X,y);
+					getWorkspace().tryLinkBlock(this,x+NEXT_OFFSET_X+NEXT_WIDTH/2,y);
 					break;
 				case LEFT:
-					getWorkspace().tryLinkBlock(this,x,y+INSERT_OFFSET_Y);
+					getWorkspace().tryLinkBlock(this,x,y+INSERT_OFFSET_Y+INSERT_HEIGHT/2);
 					break;
 				default:
 					break;
@@ -225,36 +318,8 @@ public final class Block extends Region {
 		//临时设置
 		setFill(Color.GRAY);
 		setStroke(Color.BLACK);
-		setVerticalSpacing(5);//TODO: Fix vertical spacing layout problem
-		setHorizontalSpacing(5);
-	}
-	
-	public final SVGPath getSVGPath(){
-		return svgPath;
-	}
-	
-	public final ObjectProperty<Paint> fillProperty() {
-		return svgPath.fillProperty();
-	}
-	
-	public final Paint getFill(){
-		return svgPath.getFill();
-	}
-	
-	public final void setFill(Paint value){
-		svgPath.setFill(value);
-	}
-	
-	public final ObjectProperty<Paint> strokeProperty() {
-		return svgPath.strokeProperty();
-	}
-	
-	public final Paint getStroke(){
-		return svgPath.getStroke();
-	}
-	
-	public final void setStroke(Paint value){
-		svgPath.setStroke(value);
+		setVSpacing(5);//TODO: Fix vertical spacing layout problem
+		setHSpacing(5);
 	}
 	
 	public BlockWorkspace getWorkspace() {
@@ -285,8 +350,6 @@ public final class Block extends Region {
 		((BlockWorkspace) parent).getChildren().add(this);
 		setLayoutX(x);
 		setLayoutY(y);
-		
-		((BlockSlot)oldParent).validateBlock();
 	}
 	
 	public boolean tryLinkBlock(Block block,double x,double y){
@@ -296,7 +359,7 @@ public final class Block extends Region {
 		if(!getLayoutBounds().contains(x, y))
 			return false;
 		
-		for(BlockSlot slot:_tempList)
+		for(BlockSlot slot:tempList)
 			if(slot.tryLinkBlock(block, x-slot.getLayoutX(), y-slot.getLayoutY()))
 				return true;
 		
@@ -308,16 +371,16 @@ public final class Block extends Region {
 	}
 	
 	public Map<String,Node> getNameToNode() {
-		if(_nameToNode==null)
-			_nameToNode = new HashMap<>();
+		if(cacheNameToNode==null)
+			cacheNameToNode = new HashMap<>();
 		
-		_nameToNode.clear();
+		cacheNameToNode.clear();
 		for(Node node:getChildren()){
 			String name = getNodeName(node);
 			if(name!=null)
-				_nameToNode.put(name, node);
+				cacheNameToNode.put(name, node);
 		}
-		return Collections.unmodifiableMap(_nameToNode);
+		return Collections.unmodifiableMap(cacheNameToNode);
 	}
 
 	public Node getNode(String name) {
@@ -353,8 +416,8 @@ public final class Block extends Region {
 		List<Node> managed = new ArrayList<>(getManagedChildren());
 		managed.remove(svgPath);
 		
-		double vSpace = getVerticalSpacing();
-		double hSpace = getHorizontalSpacing();
+		double vSpace = getVSpacing();
+		double hSpace = getHSpacing();
 		double[][] actualAreaBounds = getTempArray(managed.size());;
 		List<BlockSlot> slots = getLineBounds(managed, vSpace, hSpace, false, actualAreaBounds);
 		
@@ -376,8 +439,8 @@ public final class Block extends Region {
 		List<Node> managed = new ArrayList<>(getManagedChildren());
 		managed.remove(svgPath);
 		
-		double vSpace = getVerticalSpacing();
-		double hSpace = getHorizontalSpacing();
+		double vSpace = getVSpacing();
+		double hSpace = getHSpacing();
 		double[][] actualAreaBounds = getTempArray(managed.size());;
 		List<BlockSlot> slots = getLineBounds(managed, vSpace, hSpace, false, actualAreaBounds);
 		
@@ -418,10 +481,11 @@ public final class Block extends Region {
 		List<Node> managed = new ArrayList<>(getManagedChildren());
 		managed.remove(svgPath);
 
-		double vSpace = getVerticalSpacing();
-		double hSpace = getHorizontalSpacing();
-		HPos hpos = HPos.LEFT;
-		VPos vpos = VPos.TOP;
+		double vSpace = getVSpacing();
+		double hSpace = getHSpacing();
+		Pos pos = getAlignmentInternal();
+		VPos vpos = pos.getVpos();
+		HPos hpos = pos.getHpos();
 
 		double[][] actualAreaBounds = getTempArray(managed.size());;
 		List<BlockSlot> slots = getLineBounds(managed, vSpace, hSpace, false, actualAreaBounds);
@@ -546,19 +610,19 @@ public final class Block extends Region {
 	}
 	
 	private List<BlockSlot> getTempList(){
-		if(_tempList == null)
-			_tempList = new ArrayList<>();
-		_tempList.clear();
-		return _tempList;
+		if(tempList == null)
+			tempList = new ArrayList<>();
+		tempList.clear();
+		return tempList;
 	}
 
 	private double[][] getTempArray(int size) {
-		if (_tempArray == null) {
-			_tempArray = new double[2][size];
-		} else if (_tempArray[0].length < size) {
-			_tempArray = new double[2][Math.max(_tempArray.length * 3, size)];
+		if (tempArray == null) {
+			tempArray = new double[2][size];
+		} else if (tempArray[0].length < size) {
+			tempArray = new double[2][Math.max(tempArray.length * 3, size)];
 		}
-		return _tempArray;
+		return tempArray;
 	}
 
 	private double computeChildMinAreaHeight(Node child, double minBaselineComplement, Insets margin, double width) {
@@ -743,6 +807,96 @@ public final class Block extends Region {
 			return new StringBuilder(" V ").append(y + INSERT_OFFSET_Y).append(" H ").append(width - INSERT_WIDTH)
 					.append(" V ").append(y + INSERT_OFFSET_Y + INSERT_HEIGHT).append(" H ").append(width).toString();
 		}
-
 	}
+	
+    /***************************************************************************
+     *                                                                         *
+     *                         Stylesheet Handling                             *
+     *                                                                         *
+     **************************************************************************/
+
+     private static class StyleableProperties {
+
+         private static final CssMetaData<Block,Pos> ALIGNMENT =
+             new CssMetaData<Block,Pos>("-fx-alignment",
+                 new EnumConverter<Pos>(Pos.class),
+                 Pos.TOP_LEFT) {
+
+            @Override
+            public boolean isSettable(Block node) {
+                return node.alignment == null || !node.alignment.isBound();
+            }
+
+            @Override
+            public StyleableProperty<Pos> getStyleableProperty(Block node) {
+                return (StyleableProperty<Pos>)node.alignmentProperty();
+            }
+         };
+         
+         private static final CssMetaData<Block,ConnectionType> CONNECTION =
+                 new CssMetaData<Block,ConnectionType>("-fx-block-connection",
+                     new EnumConverter<ConnectionType>(ConnectionType.class),
+                     ConnectionType.NONE) {
+
+                @Override
+                public boolean isSettable(Block node) {
+                    return node.connectionType == null || !node.connectionType.isBound();
+                }
+
+                @Override
+                public StyleableProperty<ConnectionType> getStyleableProperty(Block node) {
+                    return (StyleableProperty<ConnectionType>)node.connectionTypeProperty();
+                }
+             };
+
+         private static final CssMetaData<Block,Number> V_SPACING =
+             new CssMetaData<Block,Number>("-fx-vSpacing",
+                 SizeConverter.getInstance(), 0.0){
+
+            @Override
+            public boolean isSettable(Block node) {
+                return node.vSpacing == null || !node.vSpacing.isBound();
+            }
+
+            @Override
+            public StyleableProperty<Number> getStyleableProperty(Block node) {
+                return (StyleableProperty<Number>)node.vSpacingProperty();
+            }
+         };
+         
+         private static final CssMetaData<Block,Number> H_SPACING =
+                 new CssMetaData<Block,Number>("-fx-hSpacing",
+                     SizeConverter.getInstance(), 0.0){
+
+                @Override
+                public boolean isSettable(Block node) {
+                    return node.hSpacing == null || !node.hSpacing.isBound();
+                }
+
+                @Override
+                public StyleableProperty<Number> getStyleableProperty(Block node) {
+                    return (StyleableProperty<Number>)node.hSpacingProperty();
+                }
+             };
+         
+         private static final List<CssMetaData<? extends Styleable, ?>> STYLEABLES;
+         static {
+            final List<CssMetaData<? extends Styleable, ?>> styleables =
+                new ArrayList<CssMetaData<? extends Styleable, ?>>(Pane.getClassCssMetaData());
+            styleables.add(ALIGNMENT);
+            styleables.add(CONNECTION);
+            styleables.add(V_SPACING);
+            styleables.add(H_SPACING);
+            STYLEABLES = Collections.unmodifiableList(styleables);
+         }
+    }
+
+    public static List<CssMetaData<? extends Styleable, ?>> getClassCssMetaData() {
+        return StyleableProperties.STYLEABLES;
+    }
+
+    @Override
+    public List<CssMetaData<? extends Styleable, ?>> getCssMetaData() {
+        return getClassCssMetaData();
+    }
 }
