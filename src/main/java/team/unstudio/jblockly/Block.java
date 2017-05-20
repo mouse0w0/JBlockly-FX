@@ -163,7 +163,7 @@ public final class Block extends Region {
 	private Map<String, Node> _nameToNode;
 
 	public enum ConnectionType {
-		LEFT, TOP, BUTTOM, TOPANDBUTTOM, NONE
+		LEFT, TOP, BUTTOM, TOPANDBOTTOM, NONE
 	}
 
 	private ConnectionType connectionType = ConnectionType.NONE;
@@ -190,16 +190,34 @@ public final class Block extends Region {
 			tempOldY = event.getSceneY() - getLayoutY();
 
 			moving = true;
+			
+			event.consume();
 		});
 		setOnMouseDragged(event -> {
 			if (!moving)
 				return;
 			setLayoutX(event.getSceneX() - tempOldX);
 			setLayoutY(event.getSceneY() - tempOldY);
+			
+			event.consume();
 		});
 		setOnMouseReleased(event -> {
 			moving = false;
-			getWorkspace().tryLinkBlock(this, event.getSceneX()- tempOldX, event.getSceneY()- tempOldY);
+			
+			double x = event.getSceneX()- tempOldX, y = event.getSceneY()- tempOldY;
+			switch(this.getConnectionType()){
+				case TOP:
+				case TOPANDBOTTOM:
+					getWorkspace().tryLinkBlock(this,x+NEXT_OFFSET_X,y);
+					break;
+				case LEFT:
+					getWorkspace().tryLinkBlock(this,x,y+INSERT_OFFSET_Y);
+					break;
+				default:
+					break;
+			}
+			
+			event.consume();
 		});
 
 		setPickOnBounds(false); // 启用不规则图形判断,具体见contains方法
@@ -366,9 +384,9 @@ public final class Block extends Region {
 		if(slots.isEmpty())
 			return 0;
 		
-		double height = 0;
+		double height = -vSpace;
 		for(BlockSlot slot:slots)
-			height+=slot.getLineHeight() + vSpace;
+			height += slot.getLineHeight() + vSpace;
 		
 		return height;
 	}
@@ -408,23 +426,19 @@ public final class Block extends Region {
 		double[][] actualAreaBounds = getTempArray(managed.size());;
 		List<BlockSlot> slots = getLineBounds(managed, vSpace, hSpace, false, actualAreaBounds);
 
-		if (slots.isEmpty()){
-			svgPath.setContent("");
-		}else{
+		if (!slots.isEmpty()){
 			ConnectionType connectionType = getConnectionType();
-			
-			StringBuilder builder = new StringBuilder();
-			builder.append(getTopPath(connectionType, slots.get(0).getLineWidth()));
-
-			double x = getConnectionType()==ConnectionType.LEFT?INSERT_WIDTH:0;
+			StringBuilder builder = new StringBuilder(getTopPath(connectionType, slots.get(0).getLineWidth()));
+			double x = connectionType==ConnectionType.LEFT?INSERT_WIDTH:0;
 			double y = 0;
 	
-			for (int i = 0, size = slots.size(); i < size; i++) {
+			label1: for (int i = 0, size = slots.size(); i < size; i++) {
 				BlockSlot slot = slots.get(i);
+				SlotType slotType = slot.getSlotType();
 				
 				layoutLine(slot, managed, actualAreaBounds, x, y, vSpace, hSpace, hpos, vpos);
 				
-				switch (slot.getSlotType()) {
+				switch (slotType) {
 				case BRANCH:
 					builder.append(getBranchPath(connectionType,y, slot.getLineWidth(), slot.getLineHeight(),
 							i + 1 == size ? slot.getLineWidth() : slots.get(i + 1).getLineWidth()));
@@ -432,19 +446,19 @@ public final class Block extends Region {
 				case INSERT:
 					builder.append(getInsertPath(connectionType,y, slot.getLineWidth()));
 					break;
+				case NEXT:
+					break label1;
 				default:
 					break;
 				}
 				
-				SlotType slotType = slot.getSlotType();
-				if (slotType != SlotType.NEXT){
-					y += slot.getLineHeight() + vSpace;
-				}
+				y += slot.getLineHeight() + vSpace;
 			}
 			
 			builder.append(getBottomPath(connectionType, y));
 			svgPath.setContent(builder.toString());
-		}
+		}else
+			svgPath.setContent("");
 		
 		layoutInArea(svgPath, 0, 0, svgPath.prefWidth(-1), svgPath.prefHeight(-1), 0, HPos.CENTER, VPos.CENTER);
 
@@ -453,8 +467,7 @@ public final class Block extends Region {
 
 	private void layoutLine(BlockSlot slot, List<Node> managed, double[][] actualAreaBounds, double left, double top,
 			double vSpace,double hSpace, HPos hpos, VPos vpos) {
-		SlotType slotType = slot.getSlotType();
-		double x = left+hSpace;
+		double x = left + hSpace;
 		double y = top + vSpace;
 		
 		for (int i = slot.getFirstNode(), end = slot.getLastNode() - 1; i <= end; i++) {
@@ -463,9 +476,7 @@ public final class Block extends Region {
 			x += actualAreaBounds[0][i] + hSpace;
 		}
 		
-		if(slotType==SlotType.BRANCH&&x<BlockSlot.BRANCH_MIN_WIDTH)
-			x = BlockSlot.BRANCH_MIN_WIDTH;
-		layoutInArea(slot, x, top, slot.getWidth(), slot.getHeight(), 0, null, hpos, vpos);
+		layoutInArea(slot, slot.getLayoutLineWidth(), top, slot.getWidth(), slot.getHeight(), 0, null, hpos, vpos);
 	}
 
 	private List<BlockSlot> getLineBounds(List<Node> managed, double vSpace, double hSpace, boolean minimum, double[][] actualAreaBounds) {
@@ -492,27 +503,31 @@ public final class Block extends Region {
 			
 			if (child instanceof BlockSlot) {
 				BlockSlot slot = (BlockSlot) child;
+				SlotType slotType = slot.getSlotType();
 				temp.add(slot);
 
+				if(slotType == SlotType.NEXT)
+					tempWidth -= hSpace;
+				
 				slot.setLineWidth(tempWidth);
 				slot.setLineHeight(tempHeight);
 				slot.setFirstNode(firstNode);
 				slot.setLastNode(i);
-				firstNode = i + 1;
 
 				int tsize = temp.size();
-				if (slot.getSlotType() == SlotType.BRANCH || slot.getSlotType() == SlotType.NEXT) {
-					if (tsize - lastBranchOrNextBlock != 1) // 行对齐
-						replaceAllLineWidth(temp, lastBranchOrNextBlock + 1, tsize - 2, tempMaxWidth);
+				if (slotType == SlotType.BRANCH || slotType == SlotType.NEXT) {
+					lineAlignment(temp, lastBranchOrNextBlock + 1, tsize - 2, tempMaxWidth);
 					lastBranchOrNextBlock = tsize - 1;
 					tempMaxWidth = 0;
 				} else {
 					if (tempMaxWidth < tempWidth) // 求最大行宽
 						tempMaxWidth = tempWidth;
-					if (size - i == 1 && tsize - lastBranchOrNextBlock != 1)// 最后行对齐
-						replaceAllLineWidth(temp, lastBranchOrNextBlock + 1, tsize - 1, tempMaxWidth);
+					
+					if (size - i == 1) // 最后行对齐
+						lineAlignment(temp, lastBranchOrNextBlock + 1, tsize - 1, tempMaxWidth);
 				}
 
+				firstNode = i + 1;
 				tempWidth = hSpace;
 				tempHeight = 0;
 			} else {
@@ -522,7 +537,10 @@ public final class Block extends Region {
 		return temp;
 	}
 	
-	private void replaceAllLineWidth(List<BlockSlot> managed, int start, int end, double width) {
+	private void lineAlignment(List<BlockSlot> managed, int start, int end, double width) {
+		if(start==end)
+			return;
+		
 		for (int i = start; i <= end; i++)
 			managed.get(i).setLineWidth(width);
 	}
@@ -676,7 +694,7 @@ public final class Block extends Region {
 	private String getTopPath(ConnectionType connectionType, double width) {
 		switch (connectionType) {
 		case TOP:
-		case TOPANDBUTTOM:
+		case TOPANDBOTTOM:
 			return new StringBuilder("M 0 0 H ").append(NEXT_OFFSET_X).append(" V ").append(NEXT_HEIGHT).append(" H ")
 					.append(NEXT_OFFSET_X + NEXT_WIDTH).append(" V 0 H ").append(width).toString();
 		case LEFT:
@@ -691,7 +709,7 @@ public final class Block extends Region {
 	private String getBottomPath(ConnectionType connectionType, double y) {
 		switch (connectionType) {
 		case BUTTOM:
-		case TOPANDBUTTOM:
+		case TOPANDBOTTOM:
 			return new StringBuilder(" V ").append(y).append(" H 20 V ").append(y + 5).append(" H 10 V ").append(y)
 					.append(" H 0 Z").toString();
 		case LEFT:

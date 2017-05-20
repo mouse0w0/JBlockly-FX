@@ -3,7 +3,6 @@ package team.unstudio.jblockly.demo;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
-import javafx.scene.shape.Rectangle;
 import javafx.stage.Stage;
 import team.unstudio.jblockly.Block;
 import team.unstudio.jblockly.BlockSlot;
@@ -22,29 +21,32 @@ public class Main extends Application {
 		Block block2 = new Block();
 		block2.setConnectionType(ConnectionType.LEFT);
 		block2.getChildren().addAll(
+				new Label("233333333333333333333333333"),new BlockSlot(SlotType.INSERT),
 				new Label("233333333333333333333333333"),new BlockSlot(SlotType.INSERT));
 		
 		Block block3 = new Block();
-		block3.setConnectionType(ConnectionType.LEFT);
-		block3.getChildren().addAll(new Label("233333333333333333333333333"),new BlockSlot(SlotType.INSERT));
+		block3.setConnectionType(ConnectionType.TOP);
+		block3.getChildren().addAll(
+				new Label("233333333333333333333333333"),new BlockSlot(SlotType.INSERT),
+				new Label("233333333333333333333333333"),new BlockSlot(SlotType.INSERT));
 		
-		BlockSlot slot = new BlockSlot();
-		slot.setSlotType(SlotType.INSERT);
+		BlockSlot slot = new BlockSlot(SlotType.INSERT);
 		slot.setBlock(block2);
 		
 		BlockSlot slot2 = new BlockSlot(SlotType.BRANCH);
+		slot2.setBlock(block3);
 		
 		Block block = new Block();
-		block.setConnectionType(ConnectionType.TOPANDBUTTOM);
+		block.setConnectionType(ConnectionType.TOPANDBOTTOM);
 		block.getChildren().addAll(
 				new Label("233333333333333333333333333"),slot,
 				new Label(""),slot2,
 				new Label("23333333333333333333"),new BlockSlot(SlotType.INSERT),
-				new Label("23333333333333333333333"),new BlockSlot());
+				new Label("23333333333333333333333"),new BlockSlot(),
+				new BlockSlot(SlotType.NEXT));
 
 		BlockWorkspace workspace = new BlockWorkspace();
 		workspace.addBlock(block);
-		workspace.addBlock(block3);
 
 		Scene scene = new Scene(workspace);
 
