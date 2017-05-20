@@ -2,8 +2,6 @@ package team.unstudio.jblockly;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
-
 import javafx.scene.Parent;
 import javafx.scene.layout.Pane;
 
@@ -20,8 +18,9 @@ public class BlockWorkspace extends Pane {
 	}
 	
 	public List<Block> getBlocks() {
-		return getManagedChildren().stream().filter(node -> node instanceof Block)
-				.collect(Collectors.toCollection(ArrayList<Block>::new));
+		List<Block> blocks = new ArrayList<>();
+		getManagedChildren().stream().filter(node->node instanceof Block).forEach(node->blocks.add((Block) node));
+		return blocks;
 	}
 	
 	public void tryLinkBlock(Block block,double sceneX,double sceneY){

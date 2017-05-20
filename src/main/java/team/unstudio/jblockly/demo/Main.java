@@ -6,9 +6,9 @@ import javafx.scene.control.Label;
 import javafx.stage.Stage;
 import team.unstudio.jblockly.Block;
 import team.unstudio.jblockly.BlockSlot;
-import team.unstudio.jblockly.BlockSlot.SlotType;
+import team.unstudio.jblockly.SlotType;
 import team.unstudio.jblockly.BlockWorkspace;
-import team.unstudio.jblockly.Block.ConnectionType;
+import team.unstudio.jblockly.ConnectionType;
 
 public class Main extends Application {
 
