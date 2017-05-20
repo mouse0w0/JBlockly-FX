@@ -30,6 +30,11 @@ public class BlockSlot extends Region {
 	public BlockSlot(SlotType slotType) {
 		this.slotType = slotType;
 	}
+	
+	public BlockSlot(SlotType slotType,Block block) {
+		this(slotType);
+		setBlock(block);
+	}
 
 	public BlockWorkspace getWorkspace() {
 		Parent parent = getParent();
@@ -84,7 +89,7 @@ public class BlockSlot extends Region {
 				return setBlock(block);
 			break;
 		case BRANCH:
-			if(NEXT_SLOT_BOUNDS.contains(x-getLineWidth(), y))
+			if(NEXT_SLOT_BOUNDS.contains(x, y))
 				return setBlock(block);
 			break;
 		default:
@@ -102,13 +107,15 @@ public class BlockSlot extends Region {
 		switch (getSlotType()) {
 		case NEXT:
 		case BRANCH:
-			if(connectionType==ConnectionType.TOP||connectionType==ConnectionType.TOPANDBUTTOM)
+			if(connectionType==ConnectionType.TOP||connectionType==ConnectionType.TOPANDBOTTOM)
 				return true;
 			else 
 				return false;
 		case INSERT:
 			if(connectionType==ConnectionType.LEFT)
 				return true;
+			else
+				return false;
 		default:
 			return false;
 		}
@@ -155,8 +162,8 @@ public class BlockSlot extends Region {
 		}
 	}
 	
-	private double lineWidth, lineHeight;
-	private int firstNode, lastNode;
+	private double lineWidth = 0, lineHeight = 0;
+	private int firstNode = 0, lastNode = 0;
 
 	double getLineHeight() {
 		return lineHeight;
@@ -168,6 +175,15 @@ public class BlockSlot extends Region {
 	
 	double getOriginalLineWidth(){
 		return lineWidth;
+	}
+	
+	double getLayoutLineWidth(){
+		switch (slotType) {
+		case BRANCH:
+			return lineWidth<BRANCH_MIN_WIDTH?BRANCH_MIN_WIDTH:lineWidth;
+		default:
+			return lineWidth;
+		}
 	}
 
 	double getLineWidth() {
