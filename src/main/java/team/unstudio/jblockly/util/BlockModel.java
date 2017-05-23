@@ -9,7 +9,7 @@ import javafx.scene.control.ToggleButton;
 import team.unstudio.jblockly.Block;
 import team.unstudio.jblockly.BlockSlot;
 
-public class BlockModel extends HashMap<String, Object>{
+public final class BlockModel extends HashMap<String, Object>{
 	
 	public static BlockModel getBlockModel(Block block){
 		BlockModel model = new BlockModel(Block.getNodeName(block));

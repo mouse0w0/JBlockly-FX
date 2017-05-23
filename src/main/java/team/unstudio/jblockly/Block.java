@@ -7,11 +7,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.sun.javafx.css.converters.BooleanConverter;
 import com.sun.javafx.css.converters.EnumConverter;
 import com.sun.javafx.css.converters.SizeConverter;
 
 import javafx.beans.property.BooleanProperty;
-import javafx.beans.property.BooleanPropertyBase;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ReadOnlyBooleanProperty;
@@ -19,6 +19,7 @@ import javafx.beans.property.ReadOnlyBooleanWrapper;
 import javafx.collections.ObservableList;
 import javafx.css.CssMetaData;
 import javafx.css.Styleable;
+import javafx.css.StyleableBooleanProperty;
 import javafx.css.StyleableDoubleProperty;
 import javafx.css.StyleableObjectProperty;
 import javafx.css.StyleableProperty;
@@ -30,12 +31,12 @@ import javafx.geometry.Pos;
 import javafx.geometry.VPos;
 import javafx.scene.Node;
 import javafx.scene.Parent;
-import javafx.scene.layout.Pane;
 import javafx.scene.layout.Region;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
 import javafx.scene.shape.SVGPath;
 
+//TODO: Support delete,fold,note,some event
 public class Block extends Region implements BlockGlobal{
 	
 	private static final String MARGIN_CONSTRAINT = "block-margin";
@@ -81,8 +82,8 @@ public class Block extends Region implements BlockGlobal{
 	private BooleanProperty movable;
 	public final BooleanProperty movableProperty() {
 		if (movable == null) {
-			movable = new BooleanPropertyBase(true) {
-
+			movable = new StyleableBooleanProperty() {
+				
 				@Override
 				public String getName() {
 					return "movable";
@@ -92,11 +93,16 @@ public class Block extends Region implements BlockGlobal{
 				public Object getBean() {
 					return Block.this;
 				}
+				
+				@Override
+				public CssMetaData<? extends Styleable, Boolean> getCssMetaData() {
+					return StyleableProperties.MOVABLE;
+				}
 			};
 		}
 		return movable;
 	}
-	public boolean isMovable() {return movableProperty().get();}
+	public boolean isMovable() {return movable==null?true:movableProperty().get();}
 	public void setMovable(boolean value) {movableProperty().set(value);}
 	
 	private DoubleProperty vSpacing;
@@ -235,6 +241,10 @@ public class Block extends Region implements BlockGlobal{
 	}
 	public ConnectionType getConnectionType() {return connectionType==null?ConnectionType.NONE:connectionTypeProperty().get();}
 	public void setConnectionType(ConnectionType value) {connectionTypeProperty().set(value);}
+    private ConnectionType getConnectionTypeInternal() {
+        ConnectionType local = getConnectionType();
+        return local == null ? ConnectionType.NONE : local;
+    }
 	
 	private final SVGPath svgPath;
 	public final SVGPath getSVGPath(){return svgPath;}
@@ -267,7 +277,7 @@ public class Block extends Region implements BlockGlobal{
 	private boolean performingLayout;
 	private double[][] tempArray;
 	private List<BlockSlot> tempList;
-	private Map<String, Node> cacheNameToNode;
+	private Map<String, Node> tempNameToNode;
 
 	public Block() {
 		svgPath = new SVGPath();
@@ -278,9 +288,15 @@ public class Block extends Region implements BlockGlobal{
 				return;
 
 			addToWorkspace();
-			
+
 			tempOldX = event.getSceneX() - getLayoutX();
 			tempOldY = event.getSceneY() - getLayoutY();
+			Parent parent = getParent();
+			while(parent!=null){
+				tempOldX-=parent.getLayoutX();
+				tempOldX-=parent.getLayoutY();
+				parent = parent.getParent();
+			}
 			
 			setMoving(true);
 			
@@ -295,10 +311,10 @@ public class Block extends Region implements BlockGlobal{
 			event.consume();
 		});
 		setOnMouseReleased(event -> {
-			setMoving(true);
+			setMoving(false);
 			
 			double x = event.getSceneX()- tempOldX, y = event.getSceneY()- tempOldY;
-			switch(this.getConnectionType()){
+			switch(this.getConnectionTypeInternal()){
 				case TOP:
 				case TOPANDBOTTOM:
 					getWorkspace().tryLinkBlock(this,x+NEXT_OFFSET_X+NEXT_WIDTH/2,y);
@@ -371,16 +387,16 @@ public class Block extends Region implements BlockGlobal{
 	}
 	
 	public Map<String,Node> getNameToNode() {
-		if(cacheNameToNode==null)
-			cacheNameToNode = new HashMap<>();
+		if(tempNameToNode==null)
+			tempNameToNode = new HashMap<>();
 		
-		cacheNameToNode.clear();
+		tempNameToNode.clear();
 		for(Node node:getChildren()){
 			String name = getNodeName(node);
 			if(name!=null)
-				cacheNameToNode.put(name, node);
+				tempNameToNode.put(name, node);
 		}
-		return Collections.unmodifiableMap(cacheNameToNode);
+		return Collections.unmodifiableMap(tempNameToNode);
 	}
 
 	public Node getNode(String name) {
@@ -491,7 +507,7 @@ public class Block extends Region implements BlockGlobal{
 		List<BlockSlot> slots = getLineBounds(managed, vSpace, hSpace, false, actualAreaBounds);
 
 		if (!slots.isEmpty()){
-			ConnectionType connectionType = getConnectionType();
+			ConnectionType connectionType = getConnectionTypeInternal();
 			StringBuilder builder = new StringBuilder(getTopPath(connectionType, slots.get(0).getLineWidth()));
 			double x = connectionType==ConnectionType.LEFT?INSERT_WIDTH:0;
 			double y = 0;
@@ -878,15 +894,31 @@ public class Block extends Region implements BlockGlobal{
                     return (StyleableProperty<Number>)node.hSpacingProperty();
                 }
              };
+             
+         private static final CssMetaData<Block, Boolean> MOVABLE = 
+        		 new CssMetaData<Block, Boolean>("-fx-block-movable",
+        				 BooleanConverter.getInstance(), true) {
+					
+					@Override
+					public boolean isSettable(Block styleable) {
+						return styleable.movable == null || !styleable.movable.isBound();
+					}
+					
+					@Override
+					public StyleableProperty<Boolean> getStyleableProperty(Block styleable) {
+						return (StyleableProperty<Boolean>)styleable.movableProperty();
+					}
+				};
          
          private static final List<CssMetaData<? extends Styleable, ?>> STYLEABLES;
          static {
             final List<CssMetaData<? extends Styleable, ?>> styleables =
-                new ArrayList<CssMetaData<? extends Styleable, ?>>(Pane.getClassCssMetaData());
+                new ArrayList<CssMetaData<? extends Styleable, ?>>(Region.getClassCssMetaData());
             styleables.add(ALIGNMENT);
             styleables.add(CONNECTION);
             styleables.add(V_SPACING);
             styleables.add(H_SPACING);
+            styleables.add(MOVABLE);
             STYLEABLES = Collections.unmodifiableList(styleables);
          }
     }

@@ -57,6 +57,28 @@ public class BlockSlot extends Region implements BlockGlobal{
 	public final ReadOnlyObjectProperty<Block> blockProperty(){return blockPropertyImpl().getReadOnlyProperty();}
 	public final Block getBlock() {return block==null?null:block.get();}
 	public final boolean hasBlock(){return blockPropertyImpl().isNotNull().get();}
+	
+	private ObjectProperty<Block> defaultBlock;
+	private final ObjectProperty<Block> defaultBlockProperty(){
+		if(defaultBlock == null){
+			defaultBlock = new ObjectPropertyBase<Block>() {
+
+				@Override
+				public Object getBean() {
+					return BlockSlot.this;
+				}
+
+				@Override
+				public String getName() {
+					return "defaultBlock";
+				}
+			};
+		}
+		return defaultBlock;
+	}
+	public final Block getDefaultBlock() {return defaultBlock==null?null:defaultBlock.get();}
+	public final void setDefaultBlock(Block block) {defaultBlockProperty().set(block);}
+	public final boolean hasDefaultBlock(){return defaultBlockProperty().isNotNull().get();}
 
 	public BlockSlot() {
 		this(SlotType.NONE);
@@ -106,7 +128,7 @@ public class BlockSlot extends Region implements BlockGlobal{
 				return setBlock(block);
 			break;
 		default:
-			break;
+			return false;
 		}
 		
 		if(hasBlock())
