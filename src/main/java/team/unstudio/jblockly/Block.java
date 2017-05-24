@@ -102,8 +102,34 @@ public class Block extends Region implements BlockGlobal{
 		}
 		return movable;
 	}
-	public boolean isMovable() {return movable==null?true:movableProperty().get();}
-	public void setMovable(boolean value) {movableProperty().set(value);}
+	public final boolean isMovable() {return movable==null?true:movableProperty().get();}
+	public final void setMovable(boolean value) {movableProperty().set(value);}
+	
+	private BooleanProperty folded;
+	public final BooleanProperty foldedProperty(){
+		if(folded==null){
+			folded = new StyleableBooleanProperty() {
+				
+				@Override
+				public String getName() {
+					return "folded";
+				}
+				
+				@Override
+				public Object getBean() {
+					return Block.this;
+				}
+				
+				@Override
+				public CssMetaData<? extends Styleable, Boolean> getCssMetaData() {
+					return StyleableProperties.FOLDED;
+				}
+			};
+		}
+		return folded;
+	}
+	public final boolean isFolded(){return folded==null?false:foldedProperty().get();}
+	public final void setFolded(boolean value){foldedProperty().set(value);}
 	
 	private DoubleProperty vSpacing;
 	public final DoubleProperty vSpacingProperty(){
@@ -334,7 +360,7 @@ public class Block extends Region implements BlockGlobal{
 		//临时设置
 		setFill(Color.GRAY);
 		setStroke(Color.BLACK);
-		setVSpacing(5);//TODO: Fix vertical spacing layout problem
+		setVSpacing(5);
 		setHSpacing(5);
 	}
 	
@@ -909,6 +935,21 @@ public class Block extends Region implements BlockGlobal{
 						return (StyleableProperty<Boolean>)styleable.movableProperty();
 					}
 				};
+				
+		private static final CssMetaData<Block, Boolean> FOLDED = 
+				new CssMetaData<Block, Boolean>("-fx-block-folded",
+				BooleanConverter.getInstance(), true) {
+
+			@Override
+			public boolean isSettable(Block styleable) {
+				return styleable.folded == null || !styleable.folded.isBound();
+			}
+
+			@Override
+			public StyleableProperty<Boolean> getStyleableProperty(Block styleable) {
+				return (StyleableProperty<Boolean>) styleable.foldedProperty();
+			}
+		};
          
          private static final List<CssMetaData<? extends Styleable, ?>> STYLEABLES;
          static {
@@ -919,6 +960,7 @@ public class Block extends Region implements BlockGlobal{
             styleables.add(V_SPACING);
             styleables.add(H_SPACING);
             styleables.add(MOVABLE);
+            styleables.add(FOLDED);
             STYLEABLES = Collections.unmodifiableList(styleables);
          }
     }

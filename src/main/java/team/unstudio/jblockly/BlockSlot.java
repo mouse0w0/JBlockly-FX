@@ -40,7 +40,7 @@ public class BlockSlot extends Region implements BlockGlobal{
 			block = new ReadOnlyObjectWrapper<Block>(BlockSlot.this,"block"){
 				@Override
 				protected void invalidated() {
-					if(isNotNull().get())
+					if(isNotNull().get()){
 						get().parentProperty().addListener(new ChangeListener<Parent>() {
 							@Override
 							public void changed(ObservableValue<? extends Parent> observable, Parent oldValue,
@@ -49,6 +49,29 @@ public class BlockSlot extends Region implements BlockGlobal{
 								set(null);
 							}
 						});
+					}
+				}
+				
+				@Override
+				public void set(Block newValue) {
+					if(isNotNull().get()){
+						Block oldBlock = get();
+						if(oldBlock.equals(getDefaultBlock()))
+							getChildren().remove(oldBlock);
+						else
+							oldBlock.addToWorkspace();
+					}
+					
+					if(newValue!=null){
+						getChildren().add(newValue);
+						super.set(newValue);
+					}else if(hasDefaultBlock()){
+						Block defaultBlock = getDefaultBlock();
+						getChildren().add(defaultBlock);
+						super.set(defaultBlock);
+					}else{
+						super.set(null);
+					}
 				}
 			};
 		}
@@ -57,11 +80,24 @@ public class BlockSlot extends Region implements BlockGlobal{
 	public final ReadOnlyObjectProperty<Block> blockProperty(){return blockPropertyImpl().getReadOnlyProperty();}
 	public final Block getBlock() {return block==null?null:block.get();}
 	public final boolean hasBlock(){return blockPropertyImpl().isNotNull().get();}
+	public final boolean setBlock(Block block) {
+		if(!isCanLinkBlock(block))
+			return false;
+		
+		blockPropertyImpl().set(block);
+		return true;
+	}
 	
 	private ObjectProperty<Block> defaultBlock;
 	private final ObjectProperty<Block> defaultBlockProperty(){
 		if(defaultBlock == null){
 			defaultBlock = new ObjectPropertyBase<Block>() {
+				
+				@Override
+				protected void invalidated() {
+					if(isNotNull().get())
+						get().setMovable(false);
+				}
 
 				@Override
 				public Object getBean() {
@@ -100,20 +136,6 @@ public class BlockSlot extends Region implements BlockGlobal{
 			return ((Block) parent).getWorkspace();
 		else
 			return null;
-	}
-
-	public boolean setBlock(Block block) {
-		if(!isCanLinkBlock(block))
-			return false;
-		
-		ReadOnlyObjectWrapper<Block> blockWrapper = blockPropertyImpl();
-		if (hasBlock())
-			blockWrapper.get().addToWorkspace();
-		if (block != null)
-			getChildren().add(block);
-		
-		blockWrapper.set(block);
-		return true;
 	}
 	
 	public boolean tryLinkBlock(Block block,double x,double y){

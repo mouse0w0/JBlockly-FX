@@ -30,11 +30,18 @@ public class Main extends Application {
 				new Label("233333333333333333333333333"),new BlockSlot(SlotType.INSERT),
 				new Label("233333333333333333333333333"),new BlockSlot(SlotType.INSERT));
 		
+		Block block4 = new Block();
+		block4.setConnectionType(ConnectionType.TOP);
+		block4.getChildren().addAll(
+				new Label("233333333333333333333333333"),new BlockSlot(SlotType.INSERT),
+				new Label("233333333333333333333333333"),new BlockSlot(SlotType.INSERT));
+		
 		BlockSlot slot = new BlockSlot(SlotType.INSERT);
 		slot.setBlock(block2);
 		
 		BlockSlot slot2 = new BlockSlot(SlotType.BRANCH);
-		slot2.setBlock(block3);
+		slot2.setDefaultBlock(block3);
+		slot2.setBlock(block4);
 		
 		Block block = new Block();
 		block.setConnectionType(ConnectionType.TOPANDBOTTOM);
