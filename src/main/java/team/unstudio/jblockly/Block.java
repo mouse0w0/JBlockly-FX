@@ -105,7 +105,7 @@ public class Block extends Region implements BlockGlobal{
 	public final boolean isMovable() {return movable==null?true:movableProperty().get();}
 	public final void setMovable(boolean value) {movableProperty().set(value);}
 	
-	private BooleanProperty folded;
+	private BooleanProperty folded; //TODO:
 	public final BooleanProperty foldedProperty(){
 		if(folded==null){
 			folded = new StyleableBooleanProperty() {

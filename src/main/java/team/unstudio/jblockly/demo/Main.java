@@ -40,8 +40,8 @@ public class Main extends Application {
 		slot.setBlock(block2);
 		
 		BlockSlot slot2 = new BlockSlot(SlotType.BRANCH);
-		slot2.setDefaultBlock(block3);
-		slot2.setBlock(block4);
+		slot2.setDefaultBlock(block4);
+		slot2.setBlock(block3);
 		
 		Block block = new Block();
 		block.setConnectionType(ConnectionType.TOPANDBOTTOM);

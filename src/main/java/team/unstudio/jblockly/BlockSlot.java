@@ -39,9 +39,10 @@ public class BlockSlot extends Region implements BlockGlobal{
 		if(block == null){
 			block = new ReadOnlyObjectWrapper<Block>(BlockSlot.this,"block"){
 				@Override
-				protected void invalidated() {
-					if(isNotNull().get()){
-						get().parentProperty().addListener(new ChangeListener<Parent>() {
+				public void set(Block newValue) {
+					if(newValue!=null){
+						getChildren().add(newValue);
+						newValue.parentProperty().addListener(new ChangeListener<Parent>() {
 							@Override
 							public void changed(ObservableValue<? extends Parent> observable, Parent oldValue,
 									Parent newValue) {
@@ -50,28 +51,8 @@ public class BlockSlot extends Region implements BlockGlobal{
 							}
 						});
 					}
-				}
-				
-				@Override
-				public void set(Block newValue) {
-					if(isNotNull().get()){
-						Block oldBlock = get();
-						if(oldBlock.equals(getDefaultBlock()))
-							getChildren().remove(oldBlock);
-						else
-							oldBlock.addToWorkspace();
-					}
 					
-					if(newValue!=null){
-						getChildren().add(newValue);
-						super.set(newValue);
-					}else if(hasDefaultBlock()){
-						Block defaultBlock = getDefaultBlock();
-						getChildren().add(defaultBlock);
-						super.set(defaultBlock);
-					}else{
-						super.set(null);
-					}
+					super.set(newValue);
 				}
 			};
 		}
@@ -79,24 +60,40 @@ public class BlockSlot extends Region implements BlockGlobal{
 	}
 	public final ReadOnlyObjectProperty<Block> blockProperty(){return blockPropertyImpl().getReadOnlyProperty();}
 	public final Block getBlock() {return block==null?null:block.get();}
-	public final boolean hasBlock(){return blockPropertyImpl().isNotNull().get();}
+	public final boolean hasBlock(){return getBlock()!=null;}
 	public final boolean setBlock(Block block) {
 		if(!isCanLinkBlock(block))
 			return false;
+		
+		if(hasBlock())
+			getBlock().addToWorkspace();
 		
 		blockPropertyImpl().set(block);
 		return true;
 	}
 	
-	private ObjectProperty<Block> defaultBlock;
+	private ObjectProperty<Block> defaultBlock; //TODO:default block;setVisable
 	private final ObjectProperty<Block> defaultBlockProperty(){
 		if(defaultBlock == null){
 			defaultBlock = new ObjectPropertyBase<Block>() {
 				
 				@Override
 				protected void invalidated() {
-					if(isNotNull().get())
-						get().setMovable(false);
+					if(isNull().get())
+						return;
+						
+					Block block = get();
+					block.setMovable(false);
+					block.parentProperty().addListener(new ChangeListener<Parent>() {
+						@Override
+						public void changed(ObservableValue<? extends Parent> observable, Parent oldValue,
+								Parent newValue) {
+							if(newValue==BlockSlot.this)
+								return;
+							observable.removeListener(this);
+							set(null);
+						}
+					});
 				}
 
 				@Override
@@ -108,13 +105,19 @@ public class BlockSlot extends Region implements BlockGlobal{
 				public String getName() {
 					return "defaultBlock";
 				}
+				
 			};
 		}
 		return defaultBlock;
 	}
 	public final Block getDefaultBlock() {return defaultBlock==null?null:defaultBlock.get();}
-	public final void setDefaultBlock(Block block) {defaultBlockProperty().set(block);}
-	public final boolean hasDefaultBlock(){return defaultBlockProperty().isNotNull().get();}
+	public final boolean setDefaultBlock(Block block) {
+		if(!isCanLinkBlock(block))
+			return false;
+		defaultBlockProperty().set(block);
+		return true;
+	}
+	public final boolean hasDefaultBlock(){return getDefaultBlock()!=null;}
 
 	public BlockSlot() {
 		this(SlotType.NONE);
@@ -160,6 +163,9 @@ public class BlockSlot extends Region implements BlockGlobal{
 	}
 	
 	public boolean isCanLinkBlock(Block block){
+		if(block==null)
+			return true;
+		
 		return getSlotType().isCanBeConnection(block.getConnectionType());
 	}
 
