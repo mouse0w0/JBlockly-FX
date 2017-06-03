@@ -17,6 +17,14 @@ public class BlockWorkspace extends Pane {
 		}
 	}
 	
+	public void removeBlock(Block block){
+		Parent parent = block.getParent();
+		if(parent instanceof BlockSlot)
+			((BlockSlot) parent).removeBlock();
+		else if(parent instanceof Pane)
+			((Pane) parent).getChildren().remove(block);
+	}
+	
 	public List<Block> getBlocks() {
 		List<Block> blocks = new ArrayList<>();
 		getManagedChildren().stream().filter(node->node instanceof Block).forEach(node->blocks.add((Block) node));

@@ -16,6 +16,8 @@ import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.beans.property.ReadOnlyBooleanWrapper;
+import javafx.beans.property.StringProperty;
+import javafx.beans.property.StringPropertyBase;
 import javafx.collections.ObservableList;
 import javafx.css.CssMetaData;
 import javafx.css.Styleable;
@@ -36,7 +38,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
 import javafx.scene.shape.SVGPath;
 
-//TODO: Support delete,fold,note,some event
+//TODO: Support some event
 public class Block extends Region implements BlockGlobal{
 	
 	private static final String MARGIN_CONSTRAINT = "block-margin";
@@ -82,7 +84,7 @@ public class Block extends Region implements BlockGlobal{
 	private BooleanProperty movable;
 	public final BooleanProperty movableProperty() {
 		if (movable == null) {
-			movable = new StyleableBooleanProperty() {
+			movable = new StyleableBooleanProperty(true) {
 				
 				@Override
 				public String getName() {
@@ -130,6 +132,27 @@ public class Block extends Region implements BlockGlobal{
 	}
 	public final boolean isFolded(){return folded==null?false:foldedProperty().get();}
 	public final void setFolded(boolean value){foldedProperty().set(value);}
+	
+	private StringProperty note;
+	public final StringProperty noteProperty(){
+		if(note==null){
+			note = new StringPropertyBase("") {
+				
+				@Override
+				public String getName() {
+					return "note";
+				}
+				
+				@Override
+				public Object getBean() {
+					return Block.this;
+				}
+			};
+		}
+		return note;
+	}
+	public final String getNote(){return note==null?"":note.get();}
+	public final void setNote(String value){noteProperty().set(value);}
 	
 	private DoubleProperty vSpacing;
 	public final DoubleProperty vSpacingProperty(){
@@ -351,7 +374,7 @@ public class Block extends Region implements BlockGlobal{
 				default:
 					break;
 			}
-			
+
 			event.consume();
 		});
 
@@ -364,7 +387,7 @@ public class Block extends Region implements BlockGlobal{
 		setHSpacing(5);
 	}
 	
-	public BlockWorkspace getWorkspace() {
+	public final BlockWorkspace getWorkspace() {
 		Parent parent = getParent();
 		if (parent instanceof BlockSlot)
 			return ((BlockSlot) parent).getWorkspace();
@@ -394,6 +417,10 @@ public class Block extends Region implements BlockGlobal{
 		setLayoutY(y);
 	}
 	
+	public void removeBlock(){
+		getWorkspace().removeBlock(this);
+	}
+	
 	public boolean tryLinkBlock(Block block,double x,double y){
 		if(block == this)
 			return false;
@@ -406,6 +433,10 @@ public class Block extends Region implements BlockGlobal{
 				return true;
 		
 		return false;
+	}
+	
+	public boolean isCanBeLinked(BlockSlot slot){
+		return true;
 	}
 
 	public Set<String> getNodeNames() {

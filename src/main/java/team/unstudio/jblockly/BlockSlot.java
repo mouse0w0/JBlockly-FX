@@ -1,5 +1,7 @@
 package team.unstudio.jblockly;
 
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.BooleanPropertyBase;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ObjectPropertyBase;
 import javafx.beans.property.ReadOnlyObjectProperty;
@@ -34,14 +36,85 @@ public class BlockSlot extends Region implements BlockGlobal{
 	public SlotType getSlotType() {return slotType==null?SlotType.NONE:slotType.get();}
 	public void setSlotType(SlotType value) {slotTypeProperty().set(value);}
 	
+	private BooleanProperty linkable;
+	public final BooleanProperty linkableProperty(){
+		if(linkable==null){
+			linkable = new BooleanPropertyBase(true) {
+				
+				@Override
+				public String getName() {
+					return "linkable";
+				}
+				
+				@Override
+				public Object getBean() {
+					return BlockSlot.this;
+				}
+			};
+		}
+		return linkable;
+	}
+	public boolean isLinkable(){return linkable==null?true:linkable.get();}
+	public void setLinkable(boolean value){linkableProperty().set(value);}
+	
+	
 	private ReadOnlyObjectWrapper<Block> block;
 	private final ReadOnlyObjectWrapper<Block> blockPropertyImpl(){
 		if(block == null){
-			block = new ReadOnlyObjectWrapper<Block>(BlockSlot.this,"block"){
+			block = new ReadOnlyObjectWrapper<Block>(BlockSlot.this,"block");
+		}
+		return block;
+	}
+	public final ReadOnlyObjectProperty<Block> blockProperty(){return blockPropertyImpl().getReadOnlyProperty();}
+	public final Block getBlock() {return block==null?null:block.get();}
+	public final boolean hasBlock(){return getBlock()!=null;}
+	public final boolean setBlock(Block block) {
+		if(!isCanLinkBlock(block))
+			return false;
+		
+		Block oldBlock = getBlock();
+		Block defaultBlock = getDefaultBlock();
+		if(oldBlock!=null&&defaultBlock!=oldBlock)
+			oldBlock.addToWorkspace();
+		
+		if(block!=null){
+			getChildren().add(block);
+			block.parentProperty().addListener(new ChangeListener<Parent>() {
+				@Override
+				public void changed(ObservableValue<? extends Parent> observable, Parent oldValue,
+						Parent newValue) {
+					observable.removeListener(this);
+					blockPropertyImpl().set(null);
+				}
+			});
+		}
+		
+		blockPropertyImpl().set(block);
+		return true;
+	}
+	public final void removeBlock(){
+		if(!hasBlock())
+			return;
+		
+		getChildren().remove(getBlock());
+	}
+	
+	private ObjectProperty<Block> defaultBlock;
+	private final ObjectProperty<Block> defaultBlockProperty(){
+		if(defaultBlock == null){
+			defaultBlock = new ObjectPropertyBase<Block>() {
 				@Override
 				public void set(Block newValue) {
+					if(isNotNull().get()){
+						Block oldValue = get();
+						if(getChildren().contains(oldValue))
+							getChildren().remove(oldValue);
+					}
+					
 					if(newValue!=null){
 						getChildren().add(newValue);
+						newValue.setMovable(false);
+						newValue.setVisible(!hasBlock());
 						newValue.parentProperty().addListener(new ChangeListener<Parent>() {
 							@Override
 							public void changed(ObservableValue<? extends Parent> observable, Parent oldValue,
@@ -53,47 +126,6 @@ public class BlockSlot extends Region implements BlockGlobal{
 					}
 					
 					super.set(newValue);
-				}
-			};
-		}
-		return block;
-	}
-	public final ReadOnlyObjectProperty<Block> blockProperty(){return blockPropertyImpl().getReadOnlyProperty();}
-	public final Block getBlock() {return block==null?null:block.get();}
-	public final boolean hasBlock(){return getBlock()!=null;}
-	public final boolean setBlock(Block block) {
-		if(!isCanLinkBlock(block))
-			return false;
-		
-		if(hasBlock())
-			getBlock().addToWorkspace();
-		
-		blockPropertyImpl().set(block);
-		return true;
-	}
-	
-	private ObjectProperty<Block> defaultBlock; //TODO:default block;setVisable
-	private final ObjectProperty<Block> defaultBlockProperty(){
-		if(defaultBlock == null){
-			defaultBlock = new ObjectPropertyBase<Block>() {
-				
-				@Override
-				protected void invalidated() {
-					if(isNull().get())
-						return;
-						
-					Block block = get();
-					block.setMovable(false);
-					block.parentProperty().addListener(new ChangeListener<Parent>() {
-						@Override
-						public void changed(ObservableValue<? extends Parent> observable, Parent oldValue,
-								Parent newValue) {
-							if(newValue==BlockSlot.this)
-								return;
-							observable.removeListener(this);
-							set(null);
-						}
-					});
 				}
 
 				@Override
@@ -107,6 +139,18 @@ public class BlockSlot extends Region implements BlockGlobal{
 				}
 				
 			};
+			
+			blockProperty().addListener((observable,oldValue,newValue)->{
+				Block block = getDefaultBlock();
+				if(block!=null&&newValue!=block){
+					if(newValue==null){
+						blockPropertyImpl().set(block);
+						block.setVisible(true);
+					}else{
+						block.setVisible(false);
+					}
+				}
+			});
 		}
 		return defaultBlock;
 	}
@@ -132,7 +176,7 @@ public class BlockSlot extends Region implements BlockGlobal{
 		setBlock(block);
 	}
 
-	public BlockWorkspace getWorkspace() {
+	public final BlockWorkspace getWorkspace() {
 		Parent parent = getParent();
 
 		if (parent instanceof Block)
@@ -163,16 +207,13 @@ public class BlockSlot extends Region implements BlockGlobal{
 	}
 	
 	public boolean isCanLinkBlock(Block block){
-		if(block==null)
-			return true;
-		
-		return getSlotType().isCanBeConnection(block.getConnectionType());
+		return block==null?true:getSlotType().isCanBeConnection(block.getConnectionType())&&isLinkable()&&block.isCanBeLinked(this);
 	}
 
 	@Override
 	protected void layoutChildren() {
 		if (hasBlock())
-			layoutInArea(getChildren().get(0), 0, 0, prefWidth(-1), prefHeight(-1), 0, null, HPos.CENTER, VPos.CENTER);
+			layoutInArea(getBlock(), 0, 0, prefWidth(-1), prefHeight(-1), 0, null, HPos.CENTER, VPos.CENTER);
 	}
 
 	@Override
