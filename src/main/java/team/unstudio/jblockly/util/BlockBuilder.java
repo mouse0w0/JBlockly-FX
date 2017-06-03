@@ -3,13 +3,19 @@ package team.unstudio.jblockly.util;
 import java.util.ArrayList;
 import java.util.List;
 
-import javafx.scene.Node;
-import javafx.scene.control.Label;
-import team.unstudio.jblockly.BlockSlot;
 import team.unstudio.jblockly.ConnectionType;
 import team.unstudio.jblockly.SlotType;
 
 public final class BlockBuilder {
+	
+	public class LabelBuilder implements NodeBuilder{
+
+		@Override
+		public String name() {
+			return "label";
+		}
+		
+	}
 	
 	private ConnectionType connectionType;
 	public ConnectionType getConnectionType() {return connectionType;}
@@ -27,23 +33,11 @@ public final class BlockBuilder {
 	}
 	
 	public void addLabel(String text){
-		builders.add(new NodeBuilder() {
-			
-			@Override
-			public Node build() {
-				return new Label(text);
-			}
-		});
+		
 	}
 	
 	public void addBlockSlot(String name,SlotType type){
-		builders.add(new NodeBuilder() {
-			
-			@Override
-			public Node build() {
-				return new BlockSlot(type);
-			}
-		});
+		
 	}
 	
 	public void addTextField(String name,String defaultText){
@@ -63,6 +57,6 @@ public final class BlockBuilder {
 	}
 
 	public static interface NodeBuilder{
-		Node build();
+		public String name();
 	}
 }

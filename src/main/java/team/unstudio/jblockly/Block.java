@@ -38,7 +38,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
 import javafx.scene.shape.SVGPath;
 
-//TODO: Support some event
+//TODO: Support event
 public class Block extends Region implements BlockGlobal{
 	
 	private static final String MARGIN_CONSTRAINT = "block-margin";
