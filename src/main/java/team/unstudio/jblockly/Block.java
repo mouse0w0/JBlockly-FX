@@ -329,6 +329,8 @@ public class Block extends Region implements BlockGlobal{
 	private Map<String, Node> tempNameToNode;
 
 	public Block() {
+		getStyleClass().setAll("block");
+		
 		svgPath = new SVGPath();
 		getChildren().add(svgPath);
 
@@ -366,10 +368,10 @@ public class Block extends Region implements BlockGlobal{
 			switch(this.getConnectionTypeInternal()){
 				case TOP:
 				case TOPANDBOTTOM:
-					getWorkspace().tryLinkBlock(this,x+NEXT_OFFSET_X+NEXT_WIDTH/2,y);
+					getWorkspace().tryLinkBlock(this,x+NEXT_OFFSET_X+NEXT_WIDTH/2,y-2.5);
 					break;
 				case LEFT:
-					getWorkspace().tryLinkBlock(this,x,y+INSERT_OFFSET_Y+INSERT_HEIGHT/2);
+					getWorkspace().tryLinkBlock(this,x-2.5,y+INSERT_OFFSET_Y+INSERT_HEIGHT/2);
 					break;
 				default:
 					break;
@@ -492,7 +494,7 @@ public class Block extends Region implements BlockGlobal{
 		double vSpace = getVSpacing();
 		double hSpace = getHSpacing();
 		double[][] actualAreaBounds = getTempArray(managed.size());;
-		List<BlockSlot> slots = getLineBounds(managed, vSpace, hSpace, false, actualAreaBounds);
+		List<BlockSlot> slots = getLineBounds(managed, vSpace, hSpace, actualAreaBounds);
 		
 		if(slots.isEmpty())
 			return 0;
@@ -515,7 +517,7 @@ public class Block extends Region implements BlockGlobal{
 		double vSpace = getVSpacing();
 		double hSpace = getHSpacing();
 		double[][] actualAreaBounds = getTempArray(managed.size());;
-		List<BlockSlot> slots = getLineBounds(managed, vSpace, hSpace, false, actualAreaBounds);
+		List<BlockSlot> slots = getLineBounds(managed, vSpace, hSpace, actualAreaBounds);
 		
 		if(slots.isEmpty())
 			return 0;
@@ -561,7 +563,7 @@ public class Block extends Region implements BlockGlobal{
 		HPos hpos = pos.getHpos();
 
 		double[][] actualAreaBounds = getTempArray(managed.size());;
-		List<BlockSlot> slots = getLineBounds(managed, vSpace, hSpace, false, actualAreaBounds);
+		List<BlockSlot> slots = getLineBounds(managed, vSpace, hSpace, actualAreaBounds);
 
 		if (!slots.isEmpty()){
 			ConnectionType connectionType = getConnectionTypeInternal();
@@ -616,7 +618,7 @@ public class Block extends Region implements BlockGlobal{
 		layoutInArea(slot, slot.getLayoutLineWidth(), top, slot.getWidth(), slot.getHeight(), 0, null, hpos, vpos);
 	}
 
-	private List<BlockSlot> getLineBounds(List<Node> managed, double vSpace, double hSpace, boolean minimum, double[][] actualAreaBounds) {
+	private List<BlockSlot> getLineBounds(List<Node> managed, double vSpace, double hSpace, double[][] actualAreaBounds) {
 		List<BlockSlot> temp = getTempList();
 		
 		double tempWidth = hSpace, tempHeight = 0, tempMaxWidth = 0;
@@ -627,13 +629,8 @@ public class Block extends Region implements BlockGlobal{
 			
 			//计算Node宽高
 			Insets margin = getMargin(child);
-			if (minimum) {
-				actualAreaBounds[0][i] = computeChildMinAreaWidth(child, -1, margin, -1, false);
-				actualAreaBounds[1][i] = computeChildMinAreaHeight(child, -1, margin, -1);
-			} else {
-				actualAreaBounds[0][i] = computeChildPrefAreaWidth(child, -1, margin, -1, false);
-				actualAreaBounds[1][i] = computeChildPrefAreaHeight(child, -1, margin, -1);
-			}
+			actualAreaBounds[0][i] = computeChildPrefAreaWidth(child, -1, margin, -1, false);
+			actualAreaBounds[1][i] = computeChildPrefAreaHeight(child, -1, margin, -1);
 			
 			if (tempHeight < actualAreaBounds[1][i])
 				tempHeight = actualAreaBounds[1][i];

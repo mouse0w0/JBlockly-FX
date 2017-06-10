@@ -30,10 +30,10 @@
 			<id>elmakers-repo</id>
 			<url>http://maven.elmakers.com/repository</url>
 		</repository>
-		<repository>
+		<!--<repository>
 			<id>unknowndoamin-repo</id>
 			<url>http://maven.mccraft.cn/repository/</url>
-		</repository>
+		</repository>-->
 	</repositories>
 	<dependencies>
 		<dependency>

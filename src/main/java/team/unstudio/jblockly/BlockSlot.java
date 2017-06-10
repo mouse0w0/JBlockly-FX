@@ -171,9 +171,9 @@ public class BlockSlot extends Region implements BlockGlobal{
 		setSlotType(slotType);
 	}
 	
-	public BlockSlot(SlotType slotType,Block block) {
+	public BlockSlot(SlotType slotType,Block defaultBlock) {
 		this(slotType);
-		setBlock(block);
+		setDefaultBlock(defaultBlock);
 	}
 
 	public final BlockWorkspace getWorkspace() {
@@ -188,12 +188,12 @@ public class BlockSlot extends Region implements BlockGlobal{
 	public boolean tryLinkBlock(Block block,double x,double y){
 		switch (getSlotType()) {
 		case INSERT:
-			if(INSERT_SLOT_BOUNDS.contains(x, y))
+			if(INSERT_SLOT_LINK_BOUNDS.contains(x, y))
 				return setBlock(block);
 			break;
 		case NEXT:
 		case BRANCH:
-			if(NEXT_SLOT_BOUNDS.contains(x, y))
+			if(NEXT_SLOT_LINK_BOUNDS.contains(x, y))
 				return setBlock(block);
 			break;
 		default:
@@ -223,12 +223,12 @@ public class BlockSlot extends Region implements BlockGlobal{
 		
 		switch (getSlotType()) {
 		case INSERT:
-			return INSERT_SLOT_BOUNDS.getMaxX()+INSERT_SLOT_BOUNDS.getWidth();
+			return INSERT_SLOT_WIDTH;
 		case BRANCH:
 		case NEXT:
-			return NEXT_SLOT_BOUNDS.getMaxX()+NEXT_SLOT_BOUNDS.getWidth();
+			return NEXT_SLOT_WIDTH;
 		default:
-			return BLOCK_SLOT_MIN_WIDTH;
+			return BLOCK_SLOT_WIDTH;
 		}
 	}
 
@@ -239,12 +239,12 @@ public class BlockSlot extends Region implements BlockGlobal{
 		
 		switch (getSlotType()) {
 		case INSERT:
-			return INSERT_SLOT_BOUNDS.getMaxY()+INSERT_SLOT_BOUNDS.getHeight();
+			return INSERT_SLOT_HEIGHT;
 		case BRANCH:
 		case NEXT:
-			return NEXT_SLOT_BOUNDS.getMaxY()+NEXT_SLOT_BOUNDS.getHeight();
+			return NEXT_SLOT_HEIGHT;
 		default:
-			return BLOCK_SLOT_MIN_HEIGHT;
+			return BLOCK_SLOT_HEIGHT;
 		}
 	}
 	
