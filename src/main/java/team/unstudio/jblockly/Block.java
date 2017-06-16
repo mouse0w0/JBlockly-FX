@@ -772,7 +772,7 @@ public class Block extends Region implements BlockGlobal{
 
 	private String getBottomPath(ConnectionType connectionType, double y) {
 		switch (connectionType) {
-		case BUTTOM:
+		case BOTTOM:
 		case TOPANDBOTTOM:
 			return new StringBuilder(" V ").append(y).append(" H 20 V ").append(y + 5).append(" H 10 V ").append(y)
 					.append(" H 0 Z").toString();

@@ -13,8 +13,8 @@ public interface BlockGlobal {
 	double NEXT_HEIGHT = 5;
 	double NEXT_OFFSET_X = 10;
 	
-	Bounds INSERT_SLOT_BOUNDS = new BoundingBox(0, INSERT_OFFSET_Y, INSERT_WIDTH, INSERT_HEIGHT);
-	Bounds NEXT_SLOT_BOUNDS = new BoundingBox(NEXT_OFFSET_X,0,NEXT_WIDTH,NEXT_HEIGHT+5);
+	Bounds INSERT_SLOT_BOUNDS = new BoundingBox(0 - 2, INSERT_OFFSET_Y - 2, INSERT_WIDTH + 2, INSERT_HEIGHT + 2);
+	Bounds NEXT_SLOT_BOUNDS = new BoundingBox(NEXT_OFFSET_X - 2,0 - 2,NEXT_WIDTH - 2,NEXT_HEIGHT + 5);
 	
 	double BLOCK_SLOT_MIN_WIDTH=0;
 	double BLOCK_SLOT_MIN_HEIGHT=30;
