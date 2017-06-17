@@ -1,5 +1,7 @@
 package team.unstudio.jblockly;
 
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.BooleanPropertyBase;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ObjectPropertyBase;
 import javafx.beans.property.ReadOnlyObjectProperty;
@@ -34,14 +36,86 @@ public class BlockSlot extends Region implements BlockGlobal{
 	public SlotType getSlotType() {return slotType==null?SlotType.NONE:slotType.get();}
 	public void setSlotType(SlotType value) {slotTypeProperty().set(value);}
 	
+	private BooleanProperty linkable;
+	public final BooleanProperty linkableProperty(){
+		if(linkable==null){
+			linkable = new BooleanPropertyBase(true) {
+				
+				@Override
+				public String getName() {
+					return "linkable";
+				}
+				
+				@Override
+				public Object getBean() {
+					return BlockSlot.this;
+				}
+			};
+		}
+		return linkable;
+	}
+	public boolean isLinkable(){return linkable==null?true:linkable.get();}
+	public void setLinkable(boolean value){linkableProperty().set(value);}
+	
+	
 	private ReadOnlyObjectWrapper<Block> block;
 	private final ReadOnlyObjectWrapper<Block> blockPropertyImpl(){
 		if(block == null){
-			block = new ReadOnlyObjectWrapper<Block>(BlockSlot.this,"block"){
+			block = new ReadOnlyObjectWrapper<Block>(BlockSlot.this,"block");
+		}
+		return block;
+	}
+	public final ReadOnlyObjectProperty<Block> blockProperty(){return blockPropertyImpl().getReadOnlyProperty();}
+	public final Block getBlock() {return block==null?null:block.get();}
+	public final boolean hasBlock(){return getBlock()!=null;}
+	public final boolean setBlock(Block block) {
+		if(!isCanLinkBlock(block))
+			return false;
+		
+		Block oldBlock = getBlock();
+		Block defaultBlock = getDefaultBlock();
+		if(oldBlock!=null&&defaultBlock!=oldBlock)
+			oldBlock.addToWorkspace();
+		
+		if(block!=null){
+			getChildren().add(block);
+			block.parentProperty().addListener(new ChangeListener<Parent>() {
 				@Override
-				protected void invalidated() {
-					if(isNotNull().get())
-						get().parentProperty().addListener(new ChangeListener<Parent>() {
+				public void changed(ObservableValue<? extends Parent> observable, Parent oldValue,
+						Parent newValue) {
+					observable.removeListener(this);
+					blockPropertyImpl().set(null);
+				}
+			});
+		}
+		
+		blockPropertyImpl().set(block);
+		return true;
+	}
+	public final void removeBlock(){
+		if(!hasBlock())
+			return;
+		
+		getChildren().remove(getBlock());
+	}
+	
+	private ObjectProperty<Block> defaultBlock;
+	private final ObjectProperty<Block> defaultBlockProperty(){
+		if(defaultBlock == null){
+			defaultBlock = new ObjectPropertyBase<Block>() {
+				@Override
+				public void set(Block newValue) {
+					if(isNotNull().get()){
+						Block oldValue = get();
+						if(getChildren().contains(oldValue))
+							getChildren().remove(oldValue);
+					}
+					
+					if(newValue!=null){
+						getChildren().add(newValue);
+						newValue.setMovable(false);
+						newValue.setVisible(!hasBlock());
+						newValue.parentProperty().addListener(new ChangeListener<Parent>() {
 							@Override
 							public void changed(ObservableValue<? extends Parent> observable, Parent oldValue,
 									Parent newValue) {
@@ -49,14 +123,45 @@ public class BlockSlot extends Region implements BlockGlobal{
 								set(null);
 							}
 						});
+					}
+					
+					super.set(newValue);
 				}
+
+				@Override
+				public Object getBean() {
+					return BlockSlot.this;
+				}
+
+				@Override
+				public String getName() {
+					return "defaultBlock";
+				}
+				
 			};
+			
+			blockProperty().addListener((observable,oldValue,newValue)->{
+				Block block = getDefaultBlock();
+				if(block!=null&&newValue!=block){
+					if(newValue==null){
+						blockPropertyImpl().set(block);
+						block.setVisible(true);
+					}else{
+						block.setVisible(false);
+					}
+				}
+			});
 		}
-		return block;
+		return defaultBlock;
 	}
-	public final ReadOnlyObjectProperty<Block> blockProperty(){return blockPropertyImpl().getReadOnlyProperty();}
-	public final Block getBlock() {return block==null?null:block.get();}
-	public final boolean hasBlock(){return blockPropertyImpl().isNotNull().get();}
+	public final Block getDefaultBlock() {return defaultBlock==null?null:defaultBlock.get();}
+	public final boolean setDefaultBlock(Block block) {
+		if(!isCanLinkBlock(block))
+			return false;
+		defaultBlockProperty().set(block);
+		return true;
+	}
+	public final boolean hasDefaultBlock(){return getDefaultBlock()!=null;}
 
 	public BlockSlot() {
 		this(SlotType.NONE);
@@ -66,12 +171,12 @@ public class BlockSlot extends Region implements BlockGlobal{
 		setSlotType(slotType);
 	}
 	
-	public BlockSlot(SlotType slotType,Block block) {
+	public BlockSlot(SlotType slotType,Block defaultBlock) {
 		this(slotType);
-		setBlock(block);
+		setDefaultBlock(defaultBlock);
 	}
 
-	public BlockWorkspace getWorkspace() {
+	public final BlockWorkspace getWorkspace() {
 		Parent parent = getParent();
 
 		if (parent instanceof Block)
@@ -79,34 +184,20 @@ public class BlockSlot extends Region implements BlockGlobal{
 		else
 			return null;
 	}
-
-	public boolean setBlock(Block block) {
-		if(!isCanLinkBlock(block))
-			return false;
-		
-		ReadOnlyObjectWrapper<Block> blockWrapper = blockPropertyImpl();
-		if (hasBlock())
-			blockWrapper.get().addToWorkspace();
-		if (block != null)
-			getChildren().add(block);
-		
-		blockWrapper.set(block);
-		return true;
-	}
 	
 	public boolean tryLinkBlock(Block block,double x,double y){
 		switch (getSlotType()) {
 		case INSERT:
-			if(INSERT_SLOT_BOUNDS.contains(x, y))
+			if(INSERT_SLOT_LINK_BOUNDS.contains(x, y))
 				return setBlock(block);
 			break;
 		case NEXT:
 		case BRANCH:
-			if(NEXT_SLOT_BOUNDS.contains(x, y))
+			if(NEXT_SLOT_LINK_BOUNDS.contains(x, y))
 				return setBlock(block);
 			break;
 		default:
-			break;
+			return false;
 		}
 		
 		if(hasBlock())
@@ -116,44 +207,44 @@ public class BlockSlot extends Region implements BlockGlobal{
 	}
 	
 	public boolean isCanLinkBlock(Block block){
-		return getSlotType().isCanBeConnection(block.getConnectionType());
+		return block==null?true:getSlotType().isCanBeConnection(block.getConnectionType())&&isLinkable()&&block.isCanBeLinked(this);
 	}
 
 	@Override
 	protected void layoutChildren() {
 		if (hasBlock())
-			layoutInArea(getChildren().get(0), 0, 0, prefWidth(-1), prefHeight(-1), 0, null, HPos.CENTER, VPos.CENTER);
+			layoutInArea(getBlock(), 0, 0, prefWidth(-1), prefHeight(-1), 0, null, HPos.CENTER, VPos.CENTER);
 	}
 
 	@Override
 	protected double computePrefWidth(double height) {
 		if(hasBlock())
-			return getBlock().prefWidth(height);
+			return getBlock().prefWidth(-1);
 		
 		switch (getSlotType()) {
 		case INSERT:
-			return INSERT_SLOT_BOUNDS.getMaxX()+INSERT_SLOT_BOUNDS.getWidth();
+			return INSERT_SLOT_WIDTH;
 		case BRANCH:
 		case NEXT:
-			return NEXT_SLOT_BOUNDS.getMaxX()+NEXT_SLOT_BOUNDS.getWidth();
+			return NEXT_SLOT_WIDTH;
 		default:
-			return BLOCK_SLOT_MIN_WIDTH;
+			return BLOCK_SLOT_WIDTH;
 		}
 	}
 
 	@Override
 	protected double computePrefHeight(double width) {
 		if(hasBlock())
-			return getBlock().prefHeight(width);
+			return getBlock().prefHeight(-1);
 		
 		switch (getSlotType()) {
 		case INSERT:
-			return INSERT_SLOT_BOUNDS.getMaxY()+INSERT_SLOT_BOUNDS.getHeight();
+			return INSERT_SLOT_HEIGHT;
 		case BRANCH:
 		case NEXT:
-			return NEXT_SLOT_BOUNDS.getMaxY()+NEXT_SLOT_BOUNDS.getHeight();
+			return NEXT_SLOT_HEIGHT;
 		default:
-			return BLOCK_SLOT_MIN_HEIGHT;
+			return BLOCK_SLOT_HEIGHT;
 		}
 	}
 	
@@ -167,28 +258,15 @@ public class BlockSlot extends Region implements BlockGlobal{
 	void setLineHeight(double lineHeight) {
 		this.lineHeight = lineHeight;
 	}
-	
-	double getOriginalLineWidth(){
-		return lineWidth;
-	}
-	
-	double getLayoutLineWidth(){
-		switch (getSlotType()) {
-		case BRANCH:
-			return lineWidth<BRANCH_MIN_WIDTH?BRANCH_MIN_WIDTH:lineWidth;
-		default:
-			return lineWidth;
-		}
-	}
 
 	double getLineWidth() {
 		switch (getSlotType()) {
 		case BRANCH:
 			return lineWidth<BRANCH_MIN_WIDTH?BRANCH_MIN_WIDTH:lineWidth;
-		case INSERT:
-			return lineWidth+INSERT_WIDTH;
+		case NEXT:
+			return 0;
 		default:
-			return lineWidth;
+			return lineWidth<BLOCK_SLOT_MIN_LINE_WIDTH?BLOCK_SLOT_MIN_LINE_WIDTH:lineWidth;
 		}
 	}
 

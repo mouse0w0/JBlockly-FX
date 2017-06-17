@@ -20,8 +20,8 @@
 	
     <licenses>
         <license>
-            <name>AGPLv3</name>
-            <url>https://www.gnu.org/licenses/agpl.html</url>
+            <name>Apache License</name>
+            <url>http://www.apache.org/licenses/</url>
         </license>
     </licenses>
 
@@ -30,18 +30,18 @@
 			<id>elmakers-repo</id>
 			<url>http://maven.elmakers.com/repository</url>
 		</repository>
-		<repository>
+		<!--<repository>
 			<id>unknowndoamin-repo</id>
 			<url>http://maven.mccraft.cn/repository/</url>
-		</repository>
+		</repository>-->
 	</repositories>
-	<!--<dependencies>
+	<dependencies>
 		<dependency>
 		    <groupId>com.alibaba</groupId>
 		    <artifactId>fastjson</artifactId>
-		    <version>1.2.22</version>
+		    <version>1.2.32</version>
 		</dependency>
-	</dependencies>-->
+	</dependencies>
 	<build>
 		<defaultGoal>clean install</defaultGoal>
 		<finalName>${project.name}</finalName>
