@@ -4,7 +4,7 @@ public enum ConnectionType {
 	
 	LEFT(true), 
 	TOP(true), 
-	BUTTOM(false), 
+	BOTTOM(false),
 	TOPANDBOTTOM(true), 
 	NONE(false);
 	

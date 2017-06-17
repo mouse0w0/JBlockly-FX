@@ -7,6 +7,7 @@ import team.unstudio.jblockly.SlotType;
 import team.unstudio.jblockly.util.BlockBuilder;
 import team.unstudio.jblockly.BlockWorkspace;
 import team.unstudio.jblockly.ConnectionType;
+import team.unstudio.jblockly.util.BlockBuilder;
 
 public class Main extends Application {
 
