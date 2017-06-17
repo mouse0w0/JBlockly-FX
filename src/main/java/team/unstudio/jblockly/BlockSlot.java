@@ -219,7 +219,7 @@ public class BlockSlot extends Region implements BlockGlobal{
 	@Override
 	protected double computePrefWidth(double height) {
 		if(hasBlock())
-			return getBlock().prefWidth(height);
+			return getBlock().prefWidth(-1);
 		
 		switch (getSlotType()) {
 		case INSERT:
@@ -235,7 +235,7 @@ public class BlockSlot extends Region implements BlockGlobal{
 	@Override
 	protected double computePrefHeight(double width) {
 		if(hasBlock())
-			return getBlock().prefHeight(width);
+			return getBlock().prefHeight(-1);
 		
 		switch (getSlotType()) {
 		case INSERT:
@@ -258,28 +258,15 @@ public class BlockSlot extends Region implements BlockGlobal{
 	void setLineHeight(double lineHeight) {
 		this.lineHeight = lineHeight;
 	}
-	
-	double getOriginalLineWidth(){
-		return lineWidth;
-	}
-	
-	double getLayoutLineWidth(){
-		switch (getSlotType()) {
-		case BRANCH:
-			return lineWidth<BRANCH_MIN_WIDTH?BRANCH_MIN_WIDTH:lineWidth;
-		default:
-			return lineWidth;
-		}
-	}
 
 	double getLineWidth() {
 		switch (getSlotType()) {
 		case BRANCH:
 			return lineWidth<BRANCH_MIN_WIDTH?BRANCH_MIN_WIDTH:lineWidth;
-		case INSERT:
-			return lineWidth+INSERT_WIDTH;
+		case NEXT:
+			return 0;
 		default:
-			return lineWidth;
+			return lineWidth<BLOCK_SLOT_MIN_LINE_WIDTH?BLOCK_SLOT_MIN_LINE_WIDTH:lineWidth;
 		}
 	}
 

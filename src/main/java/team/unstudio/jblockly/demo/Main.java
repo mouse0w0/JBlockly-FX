@@ -16,27 +16,39 @@ public class Main extends Application {
 
 	@Override
 	public void start(Stage stage) throws Exception {
-		BlockBuilder link = new BlockBuilder().setConnectionType(ConnectionType.TOPANDBOTTOM).setRegistyName("link")
-				.addLabel("皇天女装 ").addBlockSlot().addBlockSlot("next", SlotType.NEXT);
-				
-		BlockBuilder branch = new BlockBuilder().setConnectionType(ConnectionType.NONE).setRegistyName("branch")
-				.addLabel("main         ").addBlockSlot().addBlockSlot("branch",SlotType.BRANCH).addLabel("                   ").addBlockSlot();
-		
-		BlockBuilder insert = new BlockBuilder().setConnectionType(ConnectionType.LEFT).setRegistyName("insert")
-				.addLabel("皇天是dalao").addBlockSlot();
+		BlockBuilder main = new BlockBuilder().setConnectionType(ConnectionType.NONE).setRegistyName("main")
+				.addLabel("main").addBlockSlot().addBlockSlot("branch",SlotType.BRANCH).addLabel("").addBlockSlot();
 		
 		BlockBuilder ifBlock = new BlockBuilder().setConnectionType(ConnectionType.TOPANDBOTTOM).setRegistyName("if")
-				.addLabel("如果            ").addBlockSlot("if", SlotType.INSERT).addBlockSlot("branch", SlotType.BRANCH)
-				.addLabel("              ").addBlockSlot().addBlockSlot("next",SlotType.NEXT);
+				.addLabel("如果").addBlockSlot("if", SlotType.INSERT).addBlockSlot("branch", SlotType.BRANCH)
+				.addBlockSlot().addBlockSlot("next",SlotType.NEXT);
 		
-		BlockBuilder end = new BlockBuilder().setConnectionType(ConnectionType.TOP).setRegistyName("end").addLabel("结束方法").addBlockSlot();
+		BlockBuilder end = new BlockBuilder().setConnectionType(ConnectionType.TOP).setRegistyName("end").addLabel("返回").addBlockSlot();
 
+		BlockBuilder hookan = new BlockBuilder().setConnectionType(ConnectionType.LEFT).setRegistyName("hookan")
+				.addLabel("皇天").addBlockSlot();
+		
+		BlockBuilder getDalao = new BlockBuilder().setConnectionType(ConnectionType.LEFT).setRegistyName("getDalao")
+				.addLabel("获取大佬").addBlockSlot(null, SlotType.INSERT);
+		
+		BlockBuilder nvZhuang = new BlockBuilder().setConnectionType(ConnectionType.LEFT).setRegistyName("nvZhuang")
+				.addLabel("女装").addBlockSlot();
+		
+		BlockBuilder dalao = new BlockBuilder().setConnectionType(ConnectionType.TOPANDBOTTOM).setRegistyName("dalao")
+				.addLabel("变量 大佬").addBlockSlot(null, SlotType.INSERT);
+		
+		BlockBuilder set = new BlockBuilder().setConnectionType(ConnectionType.LEFT).setRegistyName("set")
+				.addLabel("=").addBlockSlot(null, SlotType.INSERT);
+		
 		BlockWorkspace workspace = new BlockWorkspace();
-		workspace.addBlock(branch.build());
+		workspace.addBlock(main.build());
 		workspace.addBlock(ifBlock.build());
-		workspace.addBlock(insert.build());
-		workspace.addBlock(link.build());
-		workspace.addBlock(end.build());
+		workspace.addBlock(hookan.build());
+		workspace.addBlock(getDalao.build());
+		workspace.addBlock(nvZhuang.build());
+		workspace.addBlock(dalao.build());
+		workspace.addBlock(dalao.build());
+		workspace.addBlock(set.build());
 		workspace.addBlock(end.build());
 
 		Scene scene = new Scene(workspace);

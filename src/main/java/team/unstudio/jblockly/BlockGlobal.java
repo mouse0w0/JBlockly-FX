@@ -13,6 +13,8 @@ public interface BlockGlobal {
 	double NEXT_HEIGHT = 5;
 	double NEXT_OFFSET_X = 10;
 	
+	double BLOCK_SLOT_MIN_LINE_WIDTH=100;
+	
 	double BLOCK_SLOT_WIDTH=5;
 	double BLOCK_SLOT_HEIGHT=25;
 	double INSERT_SLOT_WIDTH = INSERT_WIDTH;
