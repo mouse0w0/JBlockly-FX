@@ -80,6 +80,11 @@ public final class BlockBuilder {
 		return this;
 	}
 	
+	public BlockBuilder addNextSlot(){
+		addBlockSlot("next", SlotType.NEXT);
+		return this;
+	}
+	
 	public BlockBuilder addBlockSlot(){
 		addBlockSlot(null,SlotType.NONE);
 		return this;

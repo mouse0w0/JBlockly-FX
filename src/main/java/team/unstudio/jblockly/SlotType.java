@@ -12,9 +12,10 @@ public enum SlotType {
 		this.canConnectionType = canConnectionType;
 	}
 	
-	public boolean isCanBeConnection(ConnectionType connectionType){
-		if(!connectionType.isCanConnection())
+	public boolean isCanInsert(ConnectionType connectionType){
+		if(!connectionType.isConnectable())
 			return false;
+		
 		for(ConnectionType c:canConnectionType)
 			if(connectionType == c)
 				return true;

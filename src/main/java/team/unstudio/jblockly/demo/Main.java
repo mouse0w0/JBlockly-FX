@@ -7,7 +7,6 @@ import team.unstudio.jblockly.SlotType;
 import team.unstudio.jblockly.util.BlockBuilder;
 import team.unstudio.jblockly.BlockWorkspace;
 import team.unstudio.jblockly.ConnectionType;
-import team.unstudio.jblockly.util.BlockBuilder;
 
 public class Main extends Application {
 
@@ -36,7 +35,7 @@ public class Main extends Application {
 				.addLabel("女装").addBlockSlot();
 		
 		BlockBuilder dalao = new BlockBuilder().setConnectionType(ConnectionType.TOPANDBOTTOM).setRegistyName("dalao")
-				.addLabel("变量 大佬").addBlockSlot(null, SlotType.INSERT);
+				.addLabel("变量 大佬").addBlockSlot(null, SlotType.INSERT).addNextSlot();
 		
 		BlockBuilder set = new BlockBuilder().setConnectionType(ConnectionType.LEFT).setRegistyName("set")
 				.addLabel("=").addBlockSlot(null, SlotType.INSERT);

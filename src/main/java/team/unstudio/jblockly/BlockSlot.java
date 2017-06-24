@@ -36,14 +36,14 @@ public class BlockSlot extends Region implements BlockGlobal{
 	public SlotType getSlotType() {return slotType==null?SlotType.NONE:slotType.get();}
 	public void setSlotType(SlotType value) {slotTypeProperty().set(value);}
 	
-	private BooleanProperty linkable;
-	public final BooleanProperty linkableProperty(){
-		if(linkable==null){
-			linkable = new BooleanPropertyBase(true) {
+	private BooleanProperty insertable;
+	public final BooleanProperty insertableProperty(){
+		if(insertable==null){
+			insertable = new BooleanPropertyBase(true) {
 				
 				@Override
 				public String getName() {
-					return "linkable";
+					return "insertable";
 				}
 				
 				@Override
@@ -52,10 +52,10 @@ public class BlockSlot extends Region implements BlockGlobal{
 				}
 			};
 		}
-		return linkable;
+		return insertable;
 	}
-	public boolean isLinkable(){return linkable==null?true:linkable.get();}
-	public void setLinkable(boolean value){linkableProperty().set(value);}
+	public boolean isInsertable(){return insertable==null?true:insertable.get();}
+	public void setInsertable(boolean value){insertableProperty().set(value);}
 	
 	
 	private ReadOnlyObjectWrapper<Block> block;
@@ -69,7 +69,7 @@ public class BlockSlot extends Region implements BlockGlobal{
 	public final Block getBlock() {return block==null?null:block.get();}
 	public final boolean hasBlock(){return getBlock()!=null;}
 	public final boolean setBlock(Block block) {
-		if(!isCanLinkBlock(block))
+		if(!isCanInsertBlock(block))
 			return false;
 		
 		Block oldBlock = getBlock();
@@ -156,7 +156,7 @@ public class BlockSlot extends Region implements BlockGlobal{
 	}
 	public final Block getDefaultBlock() {return defaultBlock==null?null:defaultBlock.get();}
 	public final boolean setDefaultBlock(Block block) {
-		if(!isCanLinkBlock(block))
+		if(!isCanInsertBlock(block))
 			return false;
 		defaultBlockProperty().set(block);
 		return true;
@@ -169,6 +169,7 @@ public class BlockSlot extends Region implements BlockGlobal{
 
 	public BlockSlot(SlotType slotType) {
 		setSlotType(slotType);
+		setPickOnBounds(false);
 	}
 	
 	public BlockSlot(SlotType slotType,Block defaultBlock) {
@@ -185,7 +186,7 @@ public class BlockSlot extends Region implements BlockGlobal{
 			return null;
 	}
 	
-	public boolean tryLinkBlock(Block block,double x,double y){
+	public boolean tryConnectBlock(Block block,double x,double y){
 		switch (getSlotType()) {
 		case INSERT:
 			if(INSERT_SLOT_LINK_BOUNDS.contains(x, y))
@@ -201,13 +202,13 @@ public class BlockSlot extends Region implements BlockGlobal{
 		}
 		
 		if(hasBlock())
-			return getBlock().tryLinkBlock(block, x, y);
+			return getBlock().tryConnectBlock(block, x, y);
 		
 		return false;
 	}
 	
-	public boolean isCanLinkBlock(Block block){
-		return block==null?true:getSlotType().isCanBeConnection(block.getConnectionType())&&isLinkable()&&block.isCanBeLinked(this);
+	public boolean isCanInsertBlock(Block block){
+		return block==null?true:getSlotType().isCanInsert(block.getConnectionType())&&isInsertable()&&block.isConnectable(this);
 	}
 
 	@Override
@@ -277,16 +278,13 @@ public class BlockSlot extends Region implements BlockGlobal{
 	int getFirstNode() {
 		return firstNode;
 	}
-
-	void setFirstNode(int firstNode) {
-		this.firstNode = firstNode;
-	}
-
+	
 	int getLastNode() {
 		return lastNode;
 	}
 
-	void setLastNode(int lastNode) {
+	void setNodeRange(int firstNode,int lastNode) {
+		this.firstNode = firstNode;
 		this.lastNode = lastNode;
 	}
 }

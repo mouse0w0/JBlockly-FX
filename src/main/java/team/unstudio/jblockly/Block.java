@@ -10,6 +10,8 @@ import java.util.Set;
 import com.sun.javafx.css.converters.BooleanConverter;
 import com.sun.javafx.css.converters.EnumConverter;
 import com.sun.javafx.css.converters.SizeConverter;
+import com.sun.javafx.geom.Path2D;
+import com.sun.javafx.geom.PathIterator;
 
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ReadOnlyBooleanProperty;
@@ -34,6 +36,7 @@ import javafx.scene.Parent;
 import javafx.scene.layout.Region;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
+import javafx.scene.shape.FillRule;
 import javafx.scene.shape.SVGPath;
 
 //TODO: Support event
@@ -293,7 +296,7 @@ public class Block extends Region implements BlockGlobal{
         return local == null ? ConnectionType.NONE : local;
     }
 	
-	private final SVGPath svgPath;
+	private final SVGPath svgPath = new SVGPath();
 	public final SVGPath getSVGPath(){return svgPath;}
 	
 	public final ObjectProperty<Paint> fillProperty() {//TODO:Support CSS
@@ -325,11 +328,10 @@ public class Block extends Region implements BlockGlobal{
 	private double[][] tempArray;
 	private List<BlockSlot> tempList;
 	private Map<String, Node> tempNameToNode;
+	private StringBuilder tempStringBuilder;
 
 	public Block() {
-		getStyleClass().setAll("block");
-		
-		svgPath = new SVGPath();
+		getStyleClass().add("block");
 		getChildren().add(svgPath);
 
 		setOnMousePressed(event -> {
@@ -354,6 +356,7 @@ public class Block extends Region implements BlockGlobal{
 		setOnMouseDragged(event -> {
 			if (!isMoving())
 				return;
+			
 			setLayoutX(event.getSceneX() - tempOldX);
 			setLayoutY(event.getSceneY() - tempOldY);
 			
@@ -362,19 +365,9 @@ public class Block extends Region implements BlockGlobal{
 		setOnMouseReleased(event -> {
 			setMoving(false);
 			
-			double x = event.getSceneX()- tempOldX, y = event.getSceneY()- tempOldY;
-			switch(this.getConnectionTypeInternal()){
-				case TOP:
-				case TOPANDBOTTOM:
-					getWorkspace().tryLinkBlock(this,x+NEXT_OFFSET_X+NEXT_WIDTH/2,y-2.5);
-					break;
-				case LEFT:
-					getWorkspace().tryLinkBlock(this,x-2.5,y+INSERT_OFFSET_Y+INSERT_HEIGHT/2);
-					break;
-				default:
-					break;
-			}
-
+			if(isConnectable())
+				getWorkspace().tryConnectBlock(this,getConnectLocation());
+			
 			event.consume();
 		});
 
@@ -425,7 +418,7 @@ public class Block extends Region implements BlockGlobal{
 		getWorkspace().removeBlock(this);
 	}
 	
-	public boolean tryLinkBlock(Block block,double x,double y){
+	public boolean tryConnectBlock(Block block,double x,double y){
 		if(block == this)
 			return false;
 		
@@ -433,14 +426,31 @@ public class Block extends Region implements BlockGlobal{
 			return false;
 		
 		for(BlockSlot slot:tempList)
-			if(slot.tryLinkBlock(block, x-slot.getLayoutX(), y-slot.getLayoutY()))
+			if(slot.tryConnectBlock(block, x-slot.getLayoutX(), y-slot.getLayoutY()))
 				return true;
 		
 		return false;
 	}
 	
-	public boolean isCanBeLinked(BlockSlot slot){
-		return true;
+	public boolean isConnectable(){
+		return getConnectionTypeInternal().isConnectable();
+	}
+	
+	public boolean isConnectable(BlockSlot slot){
+		return getConnectionTypeInternal().isConnectable();
+	}
+	
+	public Point2D getConnectLocation(){
+		final double x=getLayoutX(), y=getLayoutY();
+		switch(this.getConnectionTypeInternal()){
+		case TOP:
+		case TOPANDBOTTOM:
+			return new Point2D(x+NEXT_OFFSET_X+NEXT_WIDTH/2,y-2.5);
+		case LEFT:
+			return new Point2D(x-2.5,y+INSERT_OFFSET_Y+INSERT_HEIGHT/2);
+		default:
+			return null;
+		}
 	}
 
 	public Set<String> getNodeNames() {
@@ -493,7 +503,7 @@ public class Block extends Region implements BlockGlobal{
 		List<Node> managed = new ArrayList<>(getManagedChildren());
 		managed.remove(svgPath);
 		
-		double left = getConnectionType()==ConnectionType.LEFT?INSERT_WIDTH:0;
+		double left = getConnectionTypeInternal()==ConnectionType.LEFT?INSERT_WIDTH:0;
 		double vSpace = getVSpacing();
 		double hSpace = getHSpacing();
 		double[][] actualAreaBounds = getTempArray(managed.size());;
@@ -504,15 +514,15 @@ public class Block extends Region implements BlockGlobal{
 		
 		double width = 0;
 		for(BlockSlot slot:slots){
-			double lineWidth = left+slot.getLineWidth()+actualAreaBounds[0][slot.getLastNode()];
+			double lineWidth = slot.getLineWidth()+actualAreaBounds[0][slot.getLastNode()+1];
 			if(width<lineWidth) width = lineWidth;
 		}
 		
-		return width;
+		return left+width;
 	}
 	
 	@Override
-	protected double computePrefHeight(double width) {
+	protected double computePrefHeight(double width) { //TODO:fix height
 		List<Node> managed = new ArrayList<>(getManagedChildren());
 		managed.remove(svgPath);
 		
@@ -524,11 +534,12 @@ public class Block extends Region implements BlockGlobal{
 		if(slots.isEmpty())
 			return 0;
 		
-		double height = 0;
+		double height = -vSpace;
 		for(BlockSlot slot:slots)
 			height += slot.getLineHeight() + vSpace;
 		
-		return getConnectionType()==ConnectionType.BUTTOM||getConnectionType()==ConnectionType.TOPANDBOTTOM?height-vSpace:height;
+		return height;
+		//return getConnectionTypeInternal()==ConnectionType.BOTTOM||getConnectionTypeInternal()==ConnectionType.TOPANDBOTTOM?height-vSpace:height;
 	}
 
 	@Override
@@ -556,35 +567,33 @@ public class Block extends Region implements BlockGlobal{
 
 		List<Node> managed = new ArrayList<>(getManagedChildren());
 		managed.remove(svgPath);
-
-		double vSpace = getVSpacing();
+		double vSpace = getVSpacing(); 
 		double hSpace = getHSpacing();
-		Pos pos = getAlignmentInternal();
-		VPos vpos = pos.getVpos();
-		HPos hpos = pos.getHpos();
-
-		double[][] actualAreaBounds = getTempArray(managed.size());;
+		double[][] actualAreaBounds = getTempArray(managed.size());
 		List<BlockSlot> slots = getLineBounds(managed, vSpace, hSpace, actualAreaBounds);
-
-		if (!slots.isEmpty()){
+		StringBuilder sb = getTempStringBuilder();
+		
+		if(!slots.isEmpty()){
+			Pos pos = getAlignmentInternal();
+			VPos vpos = pos.getVpos();
+			HPos hpos = pos.getHpos();
 			ConnectionType connectionType = getConnectionTypeInternal();
-			StringBuilder builder = new StringBuilder(getTopPath(connectionType, slots.get(0).getLineWidth()));
 			double x = connectionType==ConnectionType.LEFT?INSERT_WIDTH:0;
 			double y = 0;
+			
+			sb.append(getTopPath(connectionType, slots.get(0).getLineWidth()));
 	
 			label: for (int i = 0, size = slots.size(); i < size; i++) {
 				BlockSlot slot = slots.get(i);
-				SlotType slotType = slot.getSlotType();
-				
 				layoutLine(slot, managed, actualAreaBounds, x, y, vSpace, hSpace, hpos, vpos);
 				
-				switch (slotType) {
+				switch (slot.getSlotType()) {
 				case BRANCH:
-					builder.append(getBranchPath(connectionType,y, slot.getLineWidth(), slot.getLineHeight(),
+					sb.append(getBranchPath(connectionType,y, slot.getLineWidth(), slot.getLineHeight(),
 							i + 1 == size ? BLOCK_SLOT_MIN_LINE_WIDTH : slots.get(i + 1).getLineWidth()));
 					break;
 				case INSERT:
-					builder.append(getInsertPath(connectionType,y, slot.getLineWidth()));
+					sb.append(getInsertPath(connectionType,y, slot.getLineWidth()));
 					break;
 				case NEXT:
 					break label;
@@ -594,14 +603,12 @@ public class Block extends Region implements BlockGlobal{
 				
 				y += slot.getLineHeight() + vSpace;
 			}
-			
-			builder.append(getBottomPath(connectionType, y));
-			svgPath.setContent(builder.toString());
-		}else
-			svgPath.setContent("");
+			sb.append(getBottomPath(connectionType, y));
+		}
 		
+		svgPath.setContent(sb.toString());
 		layoutInArea(svgPath, 0, 0, svgPath.prefWidth(-1), svgPath.prefHeight(-1), 0, HPos.CENTER, VPos.CENTER);
-
+		
 		performingLayout = false;
 	}
 
@@ -610,7 +617,7 @@ public class Block extends Region implements BlockGlobal{
 		double x = left + hSpace;
 		double y = top + vSpace;
 		
-		for (int i = slot.getFirstNode(), end = slot.getLastNode() - 1; i <= end; i++) {
+		for (int i = slot.getFirstNode(), end = slot.getLastNode(); i <= end; i++) {
 			Node child = managed.get(i);
 			layoutInArea(child, x, y, child.prefWidth(-1), child.prefHeight(-1), 0, getMargin(child), hpos, vpos);
 			x += actualAreaBounds[0][i] + hSpace;
@@ -622,7 +629,7 @@ public class Block extends Region implements BlockGlobal{
 	private List<BlockSlot> getLineBounds(List<Node> managed, double vSpace, double hSpace, double[][] actualAreaBounds) {
 		List<BlockSlot> temp = getTempList();
 		double tempWidth = hSpace, tempHeight = 0, tempMaxWidth = 0;
-		int lastBranchOrNextBlock = -1, firstNode = 0;
+		int lastBranchBlock = -1, firstNode = 0;
 		
 		label: for (int i = 0, size = managed.size(); i < size; i++) {
 			Node child = managed.get(i);
@@ -639,39 +646,39 @@ public class Block extends Region implements BlockGlobal{
 				temp.add(slot);
 				slot.setLineWidth(tempWidth);
 				slot.setLineHeight(tempHeight);
-				slot.setFirstNode(firstNode);
-				slot.setLastNode(i);
+				slot.setNodeRange(firstNode,i-1);
+				
+				if (tempMaxWidth < tempWidth) tempMaxWidth = tempWidth; // 求最大行宽
 
 				switch(slot.getSlotType()){
 					case BRANCH:
-						int tsize = temp.size();
-						lineAlign(temp, lastBranchOrNextBlock + 1, tsize - 2, tempMaxWidth);
-						lastBranchOrNextBlock = tsize - 1;
+						int lastSlot = temp.size() - 1;
+						lineAlign(temp, lastBranchBlock + 1, lastSlot - 1, tempMaxWidth);
+						lastBranchBlock = lastSlot;
 						tempMaxWidth = 0;
 						break;
 					case NEXT:
 						break label;
 					default:
-						if (tempMaxWidth < tempWidth) // 求最大行宽
-							tempMaxWidth = tempWidth;
+						break;
 				}
-
+				
 				firstNode = i + 1;
 				tempWidth = hSpace;
 				tempHeight = 0;
 			} else 
 				tempWidth += actualAreaBounds[0][i] + hSpace;
-		}
-		
-		lineAlign(temp, lastBranchOrNextBlock + 1, temp.size() - 1, tempMaxWidth); //最后行对齐
-		
+		}	
+		lineAlign(temp, lastBranchBlock + 1, temp.size() - 1, tempMaxWidth); //最后一次行对齐
 		return temp;
 	}
 	
 	private void lineAlign(List<BlockSlot> managed, int start, int end, double width) {
 		if(start==end)
 			return;
-		for (int i = start; i <= end; i++) managed.get(i).setLineWidth(width);
+		
+		for (int i = start; i <= end; i++) 
+			managed.get(i).setLineWidth(width);
 	}
 	
 	private List<BlockSlot> getTempList(){
@@ -688,6 +695,14 @@ public class Block extends Region implements BlockGlobal{
 			tempArray = new double[2][Math.max(tempArray.length * 3, size)];
 		}
 		return tempArray;
+	}
+	
+	private StringBuilder getTempStringBuilder(){
+		if(tempStringBuilder==null){
+			tempStringBuilder = new StringBuilder();
+		}
+		tempStringBuilder.delete(0,tempStringBuilder.length());
+		return tempStringBuilder;
 	}
 
 	private double computeChildPrefAreaHeight(Node child, double prefBaselineComplement, Insets margin, double width) {
@@ -941,5 +956,12 @@ public class Block extends Region implements BlockGlobal{
     @Override
     public List<CssMetaData<? extends Styleable, ?>> getCssMetaData() {
         return getClassCssMetaData();
+    }
+    
+    public Path2D createSVGPath2D(String content,FillRule fillRule) {
+        int windingRule = fillRule == FillRule.NON_ZERO ? PathIterator.WIND_NON_ZERO : PathIterator.WIND_EVEN_ODD;
+        Path2D path = new Path2D(windingRule);
+        path.appendSVGPath(content);
+        return path;
     }
 }

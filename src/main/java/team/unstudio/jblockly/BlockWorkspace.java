@@ -2,6 +2,8 @@ package team.unstudio.jblockly;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import javafx.geometry.Point2D;
 import javafx.scene.Parent;
 import javafx.scene.layout.Pane;
 
@@ -31,17 +33,13 @@ public class BlockWorkspace extends Pane {
 		return blocks;
 	}
 	
-	public void tryLinkBlock(Block block,double sceneX,double sceneY){
-		double x = sceneX-getLayoutX(),y = sceneY-getLayoutY();
-		Parent parent = getParent();
-		while(parent!=null){
-			x-=parent.getLayoutX();
-			y-=parent.getLayoutY();
-			parent = parent.getParent();
-		}
-		
+	public void tryConnectBlock(Block block,double x,double y){
 		for(Block b:getBlocks())
-			if(b.tryLinkBlock(block, x-b.getLayoutX(), y-b.getLayoutY()))
+			if(b.tryConnectBlock(block, x-b.getLayoutX(), y-b.getLayoutY()))
 				return;
+	}
+	
+	public void tryConnectBlock(Block block,Point2D point){
+		tryConnectBlock(block, point.getX(), point.getY());
 	}
 }
