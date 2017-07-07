@@ -578,8 +578,8 @@ public class Block extends Region implements BlockGlobal{
 			VPos vpos = pos.getVpos();
 			HPos hpos = pos.getHpos();
 			ConnectionType connectionType = getConnectionTypeInternal();
-			double x = connectionType==ConnectionType.LEFT?INSERT_WIDTH:0;
-			double y = 0;
+			double x = connectionType==ConnectionType.LEFT?INSERT_WIDTH:0, y = 0;
+			boolean hasNext = false;
 			
 			sb.append(getTopPath(connectionType, slots.get(0).getLineWidth()));
 	
@@ -596,6 +596,7 @@ public class Block extends Region implements BlockGlobal{
 					sb.append(getInsertPath(connectionType,y, slot.getLineWidth()));
 					break;
 				case NEXT:
+					hasNext = true;
 					break label;
 				default:
 					break;
@@ -603,6 +604,7 @@ public class Block extends Region implements BlockGlobal{
 				
 				y += slot.getLineHeight() + vSpace;
 			}
+			if(!hasNext&&connectionType!=ConnectionType.LEFT) y-=vSpace;
 			sb.append(getBottomPath(connectionType, y));
 		}
 		
@@ -864,15 +866,15 @@ public class Block extends Region implements BlockGlobal{
                      new EnumConverter<ConnectionType>(ConnectionType.class),
                      ConnectionType.NONE) {
 
-                @Override
-                public boolean isSettable(Block node) {
-                    return node.connectionType == null || !node.connectionType.isBound();
-                }
+					@Override
+					public boolean isSettable(Block node) {
+						return node.connectionType == null || !node.connectionType.isBound();
+					}
 
-                @Override
-                public StyleableProperty<ConnectionType> getStyleableProperty(Block node) {
-                    return node.connectionTypeProperty();
-                }
+					@Override
+					public StyleableProperty<ConnectionType> getStyleableProperty(Block node) {
+						return node.connectionTypeProperty();
+					}
              };
 
          private static final CssMetaData<Block,Number> V_SPACING =
