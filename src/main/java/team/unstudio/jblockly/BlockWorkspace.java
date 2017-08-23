@@ -3,11 +3,13 @@ package team.unstudio.jblockly;
 import java.util.ArrayList;
 import java.util.List;
 
+import javafx.beans.property.ReadOnlyObjectProperty;
+import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.geometry.Point2D;
 import javafx.scene.Parent;
 import javafx.scene.layout.Pane;
 
-public class BlockWorkspace extends Pane {
+public class BlockWorkspace extends Pane implements IBlockly{
 
 	public void addBlock(Block block) {
 		if (block.getParent()!=null&&block.getWorkspace().equals(this)) {
@@ -42,4 +44,8 @@ public class BlockWorkspace extends Pane {
 	public void tryConnectBlock(Block block,Point2D point){
 		tryConnectBlock(block, point.getX(), point.getY());
 	}
+	
+	private final ReadOnlyObjectWrapper<BlockWorkspace> workspace = new ReadOnlyObjectWrapper<BlockWorkspace>(this, "workspace", this);
+	public BlockWorkspace getWorkspace() {return this;}
+	public ReadOnlyObjectProperty<BlockWorkspace> workspaceProperty() {return workspace.getReadOnlyProperty();}
 }

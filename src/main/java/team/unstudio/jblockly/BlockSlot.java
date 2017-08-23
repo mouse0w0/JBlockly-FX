@@ -13,7 +13,7 @@ import javafx.geometry.VPos;
 import javafx.scene.Parent;
 import javafx.scene.layout.Region;
 
-public class BlockSlot extends Region implements BlockGlobal{
+public class BlockSlot extends Region implements BlockGlobal,IBlockly{
 
 	private ObjectProperty<SlotType> slotType;
 	public final ObjectProperty<SlotType> slotTypeProperty(){
@@ -99,6 +99,7 @@ public class BlockSlot extends Region implements BlockGlobal{
 		getChildren().remove(getBlock());
 	}
 	
+	//TODO:
 	private ObjectProperty<Block> defaultBlock;
 	private final ObjectProperty<Block> defaultBlockProperty(){
 		if(defaultBlock == null){
@@ -163,28 +164,53 @@ public class BlockSlot extends Region implements BlockGlobal{
 	}
 	public final boolean hasDefaultBlock(){return getDefaultBlock()!=null;}
 
+	private final ChangeListener<BlockWorkspace> workspaceListener = new ChangeListener<BlockWorkspace>() {
+		
+		@Override
+		public void changed(ObservableValue<? extends BlockWorkspace> observable, BlockWorkspace oldValue,
+				BlockWorkspace newValue) {
+			setWorkspace(newValue);
+		}
+	};
+	
 	public BlockSlot() {
 		this(SlotType.NONE);
 	}
 
 	public BlockSlot(SlotType slotType) {
 		setSlotType(slotType);
+		
 		setPickOnBounds(false);
+		
+		parentProperty().addListener((observable, oldValue, newValue)->{
+			if(oldValue instanceof IBlockly){
+				((IBlockly) oldValue).workspaceProperty().removeListener(workspaceListener);
+			}
+			if(newValue instanceof IBlockly){
+				IBlockly blockly = (IBlockly) newValue;
+				setWorkspace(blockly.getWorkspace());
+				blockly.workspaceProperty().addListener(workspaceListener);
+			}else{
+				setWorkspace(null);
+			}
+		});
 	}
 	
 	public BlockSlot(SlotType slotType,Block defaultBlock) {
 		this(slotType);
 		setDefaultBlock(defaultBlock);
 	}
-
-	public final BlockWorkspace getWorkspace() {
-		Parent parent = getParent();
-
-		if (parent instanceof Block)
-			return ((Block) parent).getWorkspace();
-		else
-			return null;
+	
+	private ReadOnlyObjectWrapper<BlockWorkspace> workspace;
+	private final ReadOnlyObjectWrapper<BlockWorkspace> workspacePropertyImpl(){
+		if(workspace==null){
+			workspace = new ReadOnlyObjectWrapper<BlockWorkspace>(this, "workspace");
+		}
+		return workspace;
 	}
+	private final void setWorkspace(BlockWorkspace workspace){workspacePropertyImpl().set(workspace);}
+	public final BlockWorkspace getWorkspace(){return workspace==null?null:workspace.get();}
+	public final ReadOnlyObjectProperty<BlockWorkspace> workspaceProperty(){return workspacePropertyImpl().getReadOnlyProperty();}
 	
 	public boolean tryConnectBlock(Block block,double x,double y){
 		switch (getSlotType()) {

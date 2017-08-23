@@ -16,8 +16,12 @@ import com.sun.javafx.geom.PathIterator;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.beans.property.ReadOnlyBooleanWrapper;
+import javafx.beans.property.ReadOnlyObjectProperty;
+import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.property.StringProperty;
 import javafx.beans.property.StringPropertyBase;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.ObservableList;
 import javafx.css.CssMetaData;
 import javafx.css.Styleable;
@@ -38,9 +42,10 @@ import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
 import javafx.scene.shape.FillRule;
 import javafx.scene.shape.SVGPath;
+import team.unstudio.jblockly.util.SVGPathHelper;
 
 //TODO: Support event
-public class Block extends Region implements BlockGlobal{
+public class Block extends Region implements IBlockly,SVGPathHelper{
 	
 	private static final String MARGIN_CONSTRAINT = "block-margin";
 	private static final String NAME_CONSTRAINT = "block-name";
@@ -107,32 +112,6 @@ public class Block extends Region implements BlockGlobal{
 	}
 	public final boolean isMovable() {return movable==null?true:movableProperty().get();}
 	public final void setMovable(boolean value) {movableProperty().set(value);}
-	
-	private StyleableBooleanProperty folded; //TODO:
-	public final StyleableBooleanProperty foldedProperty(){
-		if(folded==null){
-			folded = new StyleableBooleanProperty() {
-				
-				@Override
-				public String getName() {
-					return "folded";
-				}
-				
-				@Override
-				public Object getBean() {
-					return Block.this;
-				}
-				
-				@Override
-				public CssMetaData<? extends Styleable, Boolean> getCssMetaData() {
-					return StyleableProperties.FOLDED;
-				}
-			};
-		}
-		return folded;
-	}
-	public final boolean isFolded(){return folded==null?false:foldedProperty().get();}
-	public final void setFolded(boolean value){foldedProperty().set(value);}
 	
 	private StringProperty note;
 	public final StringProperty noteProperty(){
@@ -323,13 +302,33 @@ public class Block extends Region implements BlockGlobal{
 		svgPath.setStroke(value);
 	}
 	
+	private ReadOnlyObjectWrapper<BlockWorkspace> workspace;
+	private final ReadOnlyObjectWrapper<BlockWorkspace> workspacePropertyImpl(){
+		if(workspace==null){
+			workspace = new ReadOnlyObjectWrapper<BlockWorkspace>(this, "workspace");
+		}
+		return workspace;
+	}
+	private final void setWorkspace(BlockWorkspace workspace){workspacePropertyImpl().set(workspace);}
+	public final BlockWorkspace getWorkspace(){return workspace==null?null:workspace.get();}
+	public final ReadOnlyObjectProperty<BlockWorkspace> workspaceProperty(){return workspacePropertyImpl().getReadOnlyProperty();}
+	private final ChangeListener<BlockWorkspace> workspaceListener = new ChangeListener<BlockWorkspace>() {
+		
+		@Override
+		public void changed(ObservableValue<? extends BlockWorkspace> observable, BlockWorkspace oldValue,
+				BlockWorkspace newValue) {
+			setWorkspace(newValue);
+		}
+	};
+	
 	private double tempOldX, tempOldY;
 	private boolean performingLayout;
 	private double[][] tempArray;
-	private List<BlockSlot> tempList;
-	private Map<String, Node> tempNameToNode;
 	private StringBuilder tempStringBuilder;
-
+	
+	private List<BlockSlot> cacheSlots;
+	private Map<String, Node> cacheNameToNode;
+	
 	public Block() {
 		getStyleClass().add("block");
 		getChildren().add(svgPath);
@@ -370,48 +369,48 @@ public class Block extends Region implements BlockGlobal{
 			
 			event.consume();
 		});
+		
+		parentProperty().addListener((observable, oldValue, newValue)->{
+			if(oldValue instanceof IBlockly){
+				((IBlockly) oldValue).workspaceProperty().removeListener(workspaceListener);
+			}
+			if(newValue instanceof IBlockly){
+				IBlockly blockly = (IBlockly) newValue;
+				setWorkspace(blockly.getWorkspace());
+				blockly.workspaceProperty().addListener(workspaceListener);
+			}else{
+				setWorkspace(null);
+			}
+		});
 
 		setPickOnBounds(false); // 启用不规则图形判断,具体见contains方法
 		
-		//临时设置
+		//默认设置
 		setFill(Color.GRAY);
 		setStroke(Color.BLACK);
 		setVSpacing(5);
 		setHSpacing(5);
 	}
 	
-	public final BlockWorkspace getWorkspace() {
-		Parent parent = getParent();
-		if (parent instanceof BlockSlot)
-			return ((BlockSlot) parent).getWorkspace();
-		else if (parent instanceof BlockWorkspace)
-			return (BlockWorkspace) parent;
-		else
-			return null;
-	}
-	
-	public void addToWorkspace(){
+	public void addToWorkspace() {
 		Parent oldParent = getParent();
-		if (oldParent == null)
+		if (oldParent == null) {
 			return;
-		if (oldParent instanceof BlockWorkspace){
-			BlockWorkspace workspace = (BlockWorkspace) oldParent;
-			workspace.getChildren().remove(this);
-			workspace.getChildren().add(this);
-			return;
-		}
+		} else if (oldParent instanceof BlockWorkspace) {
+			toFront();
+		} else if (oldParent instanceof BlockSlot) {
+			Parent parent = getParent();
+			double x = getLayoutX(), y = getLayoutY();
+			while (parent!=null&&parent!=getWorkspace()) {
+				x += parent.getLayoutX();
+				y += parent.getLayoutY();
+				parent = parent.getParent();
+			}
 
-		Parent parent = getParent();
-		double x = getLayoutX(), y = getLayoutY();
-		while (!(parent instanceof BlockWorkspace)) {
-			x += parent.getLayoutX();
-			y += parent.getLayoutY();
-			parent = parent.getParent();
+			((BlockWorkspace) parent).getChildren().add(this);
+			setLayoutX(x);
+			setLayoutY(y);
 		}
-
-		((BlockWorkspace) parent).getChildren().add(this);
-		setLayoutX(x);
-		setLayoutY(y);
 	}
 	
 	public void removeBlock(){
@@ -425,7 +424,7 @@ public class Block extends Region implements BlockGlobal{
 		if(!getLayoutBounds().contains(x, y))
 			return false;
 		
-		for(BlockSlot slot:tempList)
+		for(BlockSlot slot:cacheSlots)
 			if(slot.tryConnectBlock(block, x-slot.getLayoutX(), y-slot.getLayoutY()))
 				return true;
 		
@@ -437,10 +436,10 @@ public class Block extends Region implements BlockGlobal{
 	}
 	
 	public boolean isConnectable(BlockSlot slot){
-		return getConnectionTypeInternal().isConnectable();
+		return isConnectable();
 	}
 	
-	public Point2D getConnectLocation(){
+	protected Point2D getConnectLocation(){
 		final double x=getLayoutX(), y=getLayoutY();
 		switch(this.getConnectionTypeInternal()){
 		case TOP:
@@ -458,16 +457,16 @@ public class Block extends Region implements BlockGlobal{
 	}
 	
 	public Map<String,Node> getNameToNode() {
-		if(tempNameToNode==null)
-			tempNameToNode = new HashMap<>();
+		if(cacheNameToNode==null)
+			cacheNameToNode = new HashMap<>();
 		
-		tempNameToNode.clear();
+		cacheNameToNode.clear();
 		for(Node node:getChildren()){
 			String name = getNodeName(node);
 			if(name!=null)
-				tempNameToNode.put(name, node);
+				cacheNameToNode.put(name, node);
 		}
-		return Collections.unmodifiableMap(tempNameToNode);
+		return Collections.unmodifiableMap(cacheNameToNode);
 	}
 
 	public Node getNode(String name) {
@@ -581,7 +580,7 @@ public class Block extends Region implements BlockGlobal{
 			double x = connectionType==ConnectionType.LEFT?INSERT_WIDTH:0, y = 0;
 			boolean hasNext = false;
 			
-			sb.append(getTopPath(connectionType, slots.get(0).getLineWidth()));
+			sb.append(buildTopPath(connectionType, slots.get(0).getLineWidth()));
 	
 			label: for (int i = 0, size = slots.size(); i < size; i++) {
 				BlockSlot slot = slots.get(i);
@@ -589,11 +588,11 @@ public class Block extends Region implements BlockGlobal{
 				
 				switch (slot.getSlotType()) {
 				case BRANCH:
-					sb.append(getBranchPath(connectionType,y, slot.getLineWidth(), slot.getLineHeight(),
+					sb.append(buildBranchPath(connectionType,y, slot.getLineWidth(), slot.getLineHeight(),
 							i + 1 == size ? BLOCK_SLOT_MIN_LINE_WIDTH : slots.get(i + 1).getLineWidth()));
 					break;
 				case INSERT:
-					sb.append(getInsertPath(connectionType,y, slot.getLineWidth()));
+					sb.append(buildInsertPath(connectionType,y, slot.getLineWidth()));
 					break;
 				case NEXT:
 					hasNext = true;
@@ -605,7 +604,7 @@ public class Block extends Region implements BlockGlobal{
 				y += slot.getLineHeight() + vSpace;
 			}
 			if(!hasNext&&connectionType!=ConnectionType.LEFT) y-=vSpace;
-			sb.append(getBottomPath(connectionType, y));
+			sb.append(buildBottomPath(connectionType, y));
 		}
 		
 		svgPath.setContent(sb.toString());
@@ -629,7 +628,7 @@ public class Block extends Region implements BlockGlobal{
 	}
 
 	private List<BlockSlot> getLineBounds(List<Node> managed, double vSpace, double hSpace, double[][] actualAreaBounds) {
-		List<BlockSlot> temp = getTempList();
+		List<BlockSlot> cacheSlots = cacheSlots();
 		double tempWidth = hSpace, tempHeight = 0, tempMaxWidth = 0;
 		int lastBranchBlock = -1, firstNode = 0;
 		
@@ -645,7 +644,7 @@ public class Block extends Region implements BlockGlobal{
 			
 			if (child instanceof BlockSlot) {
 				BlockSlot slot = (BlockSlot) child;
-				temp.add(slot);
+				cacheSlots.add(slot);
 				slot.setLineWidth(tempWidth);
 				slot.setLineHeight(tempHeight);
 				slot.setNodeRange(firstNode,i-1);
@@ -654,8 +653,8 @@ public class Block extends Region implements BlockGlobal{
 
 				switch(slot.getSlotType()){
 					case BRANCH:
-						int lastSlot = temp.size() - 1;
-						lineAlign(temp, lastBranchBlock + 1, lastSlot - 1, tempMaxWidth);
+						int lastSlot = cacheSlots.size() - 1;
+						lineAlign(cacheSlots, lastBranchBlock + 1, lastSlot - 1, tempMaxWidth);
 						lastBranchBlock = lastSlot;
 						tempMaxWidth = 0;
 						break;
@@ -671,8 +670,8 @@ public class Block extends Region implements BlockGlobal{
 			} else 
 				tempWidth += actualAreaBounds[0][i] + hSpace;
 		}	
-		lineAlign(temp, lastBranchBlock + 1, temp.size() - 1, tempMaxWidth); //最后一次行对齐
-		return temp;
+		lineAlign(cacheSlots, lastBranchBlock + 1, cacheSlots.size() - 1, tempMaxWidth); //最后一次行对齐
+		return cacheSlots;
 	}
 	
 	private void lineAlign(List<BlockSlot> managed, int start, int end, double width) {
@@ -683,11 +682,11 @@ public class Block extends Region implements BlockGlobal{
 			managed.get(i).setLineWidth(width);
 	}
 	
-	private List<BlockSlot> getTempList(){
-		if(tempList == null)
-			tempList = new ArrayList<>();
-		tempList.clear();
-		return tempList;
+	private List<BlockSlot> cacheSlots(){
+		if(cacheSlots == null)
+			cacheSlots = new ArrayList<>();
+		cacheSlots.clear();
+		return cacheSlots;
 	}
 
 	private double[][] getTempArray(int size) {
@@ -778,64 +777,6 @@ public class Block extends Region implements BlockGlobal{
 	private static double snapSpace(double value, boolean snapToPixel) {
 		return snapToPixel ? Math.round(value) : value;
 	}
-
-	/************************************************************
-	 * * SVG Path * *
-	 ************************************************************/
-
-	private String getTopPath(ConnectionType connectionType, double width) {
-		switch (connectionType) {
-		case TOP:
-		case TOPANDBOTTOM:
-			return new StringBuilder("M 0 0 H ").append(NEXT_OFFSET_X).append(" V ").append(NEXT_HEIGHT).append(" H ")
-					.append(NEXT_OFFSET_X + NEXT_WIDTH).append(" V 0 H ").append(width).toString();
-		case LEFT:
-			return new StringBuilder("M ").append(INSERT_WIDTH).append(" ").append(INSERT_HEIGHT + INSERT_OFFSET_Y)
-					.append(" H 0 V ").append(INSERT_HEIGHT).append(" H ").append(INSERT_WIDTH).append(" V 0 H ")
-					.append(INSERT_WIDTH+width).toString();
-		default:
-			return new StringBuilder("M 0 0 H ").append(width).toString();
-		}
-	}
-
-	private String getBottomPath(ConnectionType connectionType, double y) {
-		switch (connectionType) {
-		case BOTTOM:
-		case TOPANDBOTTOM:
-			return new StringBuilder(" V ").append(y).append(" H 20 V ").append(y + 5).append(" H 10 V ").append(y)
-					.append(" H 0 Z").toString();
-		case LEFT:
-			return new StringBuilder(" V ").append(y).append(" H ").append(INSERT_WIDTH).append(" Z").toString();
-		default:
-			return new StringBuilder(" V ").append(y).append(" H 0 Z").toString();
-		}
-	}
-
-	private String getBranchPath(ConnectionType connectionType, double y, double width, double height, double nextWidth) {
-		switch (connectionType) {
-		case LEFT:
-			return new StringBuilder(" V ").append(y).append(" H ").append(INSERT_WIDTH+width + NEXT_OFFSET_X + NEXT_WIDTH).append(" V ")
-				.append(y + NEXT_HEIGHT).append(" H ").append(INSERT_WIDTH+width + NEXT_OFFSET_X).append(" V ").append(y)
-				.append(" H ").append(INSERT_WIDTH+width).append(" V ").append(y + height).append(" H ").append(INSERT_WIDTH+nextWidth)
-				.toString();
-		default:
-			return new StringBuilder(" V ").append(y).append(" H ").append(width + NEXT_OFFSET_X + NEXT_WIDTH).append(" V ")
-					.append(y + NEXT_HEIGHT).append(" H ").append(width + NEXT_OFFSET_X).append(" V ").append(y)
-					.append(" H ").append(width).append(" V ").append(y + height).append(" H ").append(nextWidth)
-					.toString();
-		}
-	}
-
-	private String getInsertPath(ConnectionType connectionType, double y, double width) {
-		switch (connectionType) {
-		case LEFT:
-			return new StringBuilder(" V ").append(y + INSERT_OFFSET_Y).append(" H ").append(INSERT_WIDTH+ width - INSERT_WIDTH)
-					.append(" V ").append(y + INSERT_OFFSET_Y + INSERT_HEIGHT).append(" H ").append(INSERT_WIDTH+width).toString();
-		default:
-			return new StringBuilder(" V ").append(y + INSERT_OFFSET_Y).append(" H ").append(width - INSERT_WIDTH)
-					.append(" V ").append(y + INSERT_OFFSET_Y + INSERT_HEIGHT).append(" H ").append(width).toString();
-		}
-	}
 	
     /***************************************************************************
      *                                                                         *
@@ -921,21 +862,6 @@ public class Block extends Region implements BlockGlobal{
 						return styleable.movableProperty();
 					}
 				};
-				
-		private static final CssMetaData<Block, Boolean> FOLDED = 
-				new CssMetaData<Block, Boolean>("-fx-block-folded",
-				BooleanConverter.getInstance(), true) {
-
-			@Override
-			public boolean isSettable(Block styleable) {
-				return styleable.folded == null || !styleable.folded.isBound();
-			}
-
-			@Override
-			public StyleableProperty<Boolean> getStyleableProperty(Block styleable) {
-				return styleable.foldedProperty();
-			}
-		};
          
          private static final List<CssMetaData<? extends Styleable, ?>> STYLEABLES;
          static {
@@ -946,7 +872,6 @@ public class Block extends Region implements BlockGlobal{
             styleables.add(V_SPACING);
             styleables.add(H_SPACING);
             styleables.add(MOVABLE);
-            styleables.add(FOLDED);
             STYLEABLES = Collections.unmodifiableList(styleables);
          }
     }
