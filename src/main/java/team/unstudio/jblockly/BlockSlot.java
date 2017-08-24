@@ -12,6 +12,7 @@ import javafx.geometry.HPos;
 import javafx.geometry.VPos;
 import javafx.scene.Parent;
 import javafx.scene.layout.Region;
+import team.unstudio.jblockly.util.IBlockBuilder;
 
 public class BlockSlot extends Region implements BlockGlobal,IBlockly{
 
@@ -73,8 +74,9 @@ public class BlockSlot extends Region implements BlockGlobal,IBlockly{
 			return false;
 		
 		Block oldBlock = getBlock();
-		Block defaultBlock = getDefaultBlock();
-		if(oldBlock!=null&&defaultBlock!=oldBlock)
+//		Block defaultBlock = getDefaultBlock().build();
+//		if(oldBlock!=null&&defaultBlock!=oldBlock)
+		if(oldBlock!=null)
 			oldBlock.addToWorkspace();
 		
 		if(block!=null){
@@ -100,35 +102,11 @@ public class BlockSlot extends Region implements BlockGlobal,IBlockly{
 	}
 	
 	//TODO:
-	private ObjectProperty<Block> defaultBlock;
-	private final ObjectProperty<Block> defaultBlockProperty(){
+	private Block cacheDefaultBlock;
+	private ObjectProperty<IBlockBuilder> defaultBlock;
+	private final ObjectProperty<IBlockBuilder> defaultBlockProperty(){
 		if(defaultBlock == null){
-			defaultBlock = new ObjectPropertyBase<Block>() {
-				@Override
-				public void set(Block newValue) {
-					if(isNotNull().get()){
-						Block oldValue = get();
-						if(getChildren().contains(oldValue))
-							getChildren().remove(oldValue);
-					}
-					
-					if(newValue!=null){
-						getChildren().add(newValue);
-						newValue.setMovable(false);
-						newValue.setVisible(!hasBlock());
-						newValue.parentProperty().addListener(new ChangeListener<Parent>() {
-							@Override
-							public void changed(ObservableValue<? extends Parent> observable, Parent oldValue,
-									Parent newValue) {
-								observable.removeListener(this);
-								set(null);
-							}
-						});
-					}
-					
-					super.set(newValue);
-				}
-
+			defaultBlock = new ObjectPropertyBase<IBlockBuilder>() {
 				@Override
 				public Object getBean() {
 					return BlockSlot.this;
@@ -138,28 +116,14 @@ public class BlockSlot extends Region implements BlockGlobal,IBlockly{
 				public String getName() {
 					return "defaultBlock";
 				}
-				
 			};
-			
-			blockProperty().addListener((observable,oldValue,newValue)->{
-				Block block = getDefaultBlock();
-				if(block!=null&&newValue!=block){
-					if(newValue==null){
-						blockPropertyImpl().set(block);
-						block.setVisible(true);
-					}else{
-						block.setVisible(false);
-					}
-				}
-			});
 		}
+			
 		return defaultBlock;
 	}
-	public final Block getDefaultBlock() {return defaultBlock==null?null:defaultBlock.get();}
-	public final boolean setDefaultBlock(Block block) {
-		if(!isCanInsertBlock(block))
-			return false;
-		defaultBlockProperty().set(block);
+	public final IBlockBuilder getDefaultBlock() {return defaultBlock==null?null:defaultBlock.get();}
+	public final boolean setDefaultBlock(IBlockBuilder builder) {
+		defaultBlockProperty().set(builder);
 		return true;
 	}
 	public final boolean hasDefaultBlock(){return getDefaultBlock()!=null;}
@@ -196,7 +160,7 @@ public class BlockSlot extends Region implements BlockGlobal,IBlockly{
 		});
 	}
 	
-	public BlockSlot(SlotType slotType,Block defaultBlock) {
+	public BlockSlot(SlotType slotType,IBlockBuilder defaultBlock) {
 		this(slotType);
 		setDefaultBlock(defaultBlock);
 	}

@@ -5,11 +5,11 @@ import javafx.beans.property.ObjectPropertyBase;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.scene.layout.Pane;
-import team.unstudio.jblockly.util.BlockBuilder;
+import team.unstudio.jblockly.util.SimpleBlockBuilder;
 
 public class BlockList extends Pane implements IBlockly{
 	
-	private final ObjectProperty<BlockBuilder> builders = new ObjectPropertyBase<BlockBuilder>(){
+	private final ObjectProperty<SimpleBlockBuilder> builders = new ObjectPropertyBase<SimpleBlockBuilder>(){
 
 		@Override
 		public Object getBean() {
@@ -22,7 +22,7 @@ public class BlockList extends Pane implements IBlockly{
 		}
 		
 	};
-	public final ObjectProperty<BlockBuilder> buildersProperty(){
+	public final ObjectProperty<SimpleBlockBuilder> buildersProperty(){
 		return builders;
 	}
 	

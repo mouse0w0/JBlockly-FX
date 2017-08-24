@@ -10,6 +10,16 @@ import javafx.scene.Parent;
 import javafx.scene.layout.Pane;
 
 public class BlockWorkspace extends Pane implements IBlockly{
+	
+	private ReadOnlyObjectWrapper<Block> movingBlock;
+	final ReadOnlyObjectWrapper<Block> movingBlockPropertyImpl(){
+		if(movingBlock==null)
+			movingBlock = new ReadOnlyObjectWrapper<>(this, "movingBlock");
+		return movingBlock;
+	}
+	final void setMovingBlock(Block block){movingBlockPropertyImpl().set(block);}
+	public final ReadOnlyObjectProperty<Block> movingBlockProperty(){return movingBlockPropertyImpl().getReadOnlyProperty();}
+	public final Block getMovingBlock(){return movingBlock==null?null:movingBlock.get();}
 
 	public void addBlock(Block block) {
 		if (block.getParent()!=null&&block.getWorkspace().equals(this)) {

@@ -233,7 +233,17 @@ public class Block extends Region implements IBlockly,SVGPathHelper{
 	private ReadOnlyBooleanWrapper moving;
 	private final ReadOnlyBooleanWrapper movingPropertyImpl(){
 		if(moving==null){
-			moving = new ReadOnlyBooleanWrapper(this, "moving");
+			moving = new ReadOnlyBooleanWrapper(this, "moving"){
+				@Override
+				public void set(boolean newValue) {
+					if(newValue)
+						getWorkspace().setMovingBlock(Block.this);
+					else if(getWorkspace().getMovingBlock().equals(Block.this))
+						getWorkspace().setMovingBlock(null);
+					
+					super.set(newValue);
+				}
+			};
 		}
 		return moving;
 	}
@@ -339,14 +349,9 @@ public class Block extends Region implements IBlockly,SVGPathHelper{
 
 			addToWorkspace();
 
-			tempOldX = event.getSceneX() - getLayoutX();
-			tempOldY = event.getSceneY() - getLayoutY();
-			Parent parent = getParent();
-			while(parent!=null){
-				tempOldX-=parent.getLayoutX();
-				tempOldX-=parent.getLayoutY();
-				parent = parent.getParent();
-			}
+			Point2D pos = getRelativeWorkspace();
+			tempOldX = event.getSceneX() - pos.getX();
+			tempOldY = event.getSceneY() - pos.getY();
 			
 			setMoving(true);
 			
@@ -391,7 +396,7 @@ public class Block extends Region implements IBlockly,SVGPathHelper{
 		setVSpacing(5);
 		setHSpacing(5);
 	}
-	
+
 	public void addToWorkspace() {
 		Parent oldParent = getParent();
 		if (oldParent == null) {
@@ -399,18 +404,23 @@ public class Block extends Region implements IBlockly,SVGPathHelper{
 		} else if (oldParent instanceof BlockWorkspace) {
 			toFront();
 		} else if (oldParent instanceof BlockSlot) {
-			Parent parent = getParent();
-			double x = getLayoutX(), y = getLayoutY();
-			while (parent!=null&&parent!=getWorkspace()) {
-				x += parent.getLayoutX();
-				y += parent.getLayoutY();
-				parent = parent.getParent();
-			}
-
-			((BlockWorkspace) parent).getChildren().add(this);
-			setLayoutX(x);
-			setLayoutY(y);
+			Point2D pos = getRelativeWorkspace();
+			getWorkspace().getChildren().add(this);
+			setLayoutX(pos.getX());
+			setLayoutY(pos.getY());
 		}
+	}
+	
+	private Point2D getRelativeWorkspace(){
+		BlockWorkspace workspace = getWorkspace();
+		Parent parent = getParent();
+		double x = getLayoutX(), y = getLayoutY();
+		while (parent!=null&&parent!=workspace) {
+			x += parent.getLayoutX();
+			y += parent.getLayoutY();
+			parent = parent.getParent();
+		}
+		return new Point2D(x, y);
 	}
 	
 	public void removeBlock(){
@@ -880,10 +890,10 @@ public class Block extends Region implements IBlockly,SVGPathHelper{
         return StyleableProperties.STYLEABLES;
     }
 
-    @Override
-    public List<CssMetaData<? extends Styleable, ?>> getCssMetaData() {
-        return getClassCssMetaData();
-    }
+//    @Override
+//    public List<CssMetaData<? extends Styleable, ?>> getCssMetaData() {
+//        return getClassCssMetaData();
+//    }
     
     public Path2D createSVGPath2D(String content,FillRule fillRule) {
         int windingRule = fillRule == FillRule.NON_ZERO ? PathIterator.WIND_NON_ZERO : PathIterator.WIND_EVEN_ODD;
