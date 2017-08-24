@@ -6,6 +6,8 @@ import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ObjectPropertyBase;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.ReadOnlyObjectWrapper;
+import javafx.beans.property.StringProperty;
+import javafx.beans.property.StringPropertyBase;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.geometry.HPos;
@@ -14,7 +16,7 @@ import javafx.scene.Parent;
 import javafx.scene.layout.Region;
 import team.unstudio.jblockly.util.IBlockBuilder;
 
-public class BlockSlot extends Region implements BlockGlobal,IBlockly{
+public class BlockSlot extends Region implements BlockGlobal,IBlockly,IBlockInput<Block>{
 
 	private ObjectProperty<SlotType> slotType;
 	public final ObjectProperty<SlotType> slotTypeProperty(){
@@ -127,15 +129,18 @@ public class BlockSlot extends Region implements BlockGlobal,IBlockly{
 		return true;
 	}
 	public final boolean hasDefaultBlock(){return getDefaultBlock()!=null;}
-
-	private final ChangeListener<BlockWorkspace> workspaceListener = new ChangeListener<BlockWorkspace>() {
-		
-		@Override
-		public void changed(ObservableValue<? extends BlockWorkspace> observable, BlockWorkspace oldValue,
-				BlockWorkspace newValue) {
-			setWorkspace(newValue);
+	
+	private ReadOnlyObjectWrapper<BlockWorkspace> workspace;
+	private final ReadOnlyObjectWrapper<BlockWorkspace> workspacePropertyImpl(){
+		if(workspace==null){
+			workspace = new ReadOnlyObjectWrapper<BlockWorkspace>(this, "workspace");
 		}
-	};
+		return workspace;
+	}
+	private final void setWorkspace(BlockWorkspace workspace){workspacePropertyImpl().set(workspace);}
+	public final BlockWorkspace getWorkspace(){return workspace==null?null:workspace.get();}
+	public final ReadOnlyObjectProperty<BlockWorkspace> workspaceProperty(){return workspacePropertyImpl().getReadOnlyProperty();}
+	private final ChangeListener<BlockWorkspace> workspaceListener = (observable, oldValue, newValue)->setWorkspace(newValue);
 	
 	public BlockSlot() {
 		this(SlotType.NONE);
@@ -164,17 +169,6 @@ public class BlockSlot extends Region implements BlockGlobal,IBlockly{
 		this(slotType);
 		setDefaultBlock(defaultBlock);
 	}
-	
-	private ReadOnlyObjectWrapper<BlockWorkspace> workspace;
-	private final ReadOnlyObjectWrapper<BlockWorkspace> workspacePropertyImpl(){
-		if(workspace==null){
-			workspace = new ReadOnlyObjectWrapper<BlockWorkspace>(this, "workspace");
-		}
-		return workspace;
-	}
-	private final void setWorkspace(BlockWorkspace workspace){workspacePropertyImpl().set(workspace);}
-	public final BlockWorkspace getWorkspace(){return workspace==null?null:workspace.get();}
-	public final ReadOnlyObjectProperty<BlockWorkspace> workspaceProperty(){return workspacePropertyImpl().getReadOnlyProperty();}
 	
 	public boolean tryConnectBlock(Block block,double x,double y){
 		switch (getSlotType()) {
@@ -277,4 +271,34 @@ public class BlockSlot extends Region implements BlockGlobal,IBlockly{
 		this.firstNode = firstNode;
 		this.lastNode = lastNode;
 	}
+	
+	private StringProperty name;
+	@Override
+	public StringProperty name() {
+		if(name==null){
+			name = new StringPropertyBase() {
+				
+				@Override
+				public String getName() {
+					return "name";
+				}
+				
+				@Override
+				public Object getBean() {
+					return BlockSlot.this;
+				}
+			};
+		}
+		return name;
+	}
+	@Override
+	public String getName() {
+		return null;
+	}
+	@Override
+	public void setName(String name) {name().set(name);}
+	@Override
+	public Block getValue() {return getBlock();}
+	@Override
+	public void setValue(Block value) {setBlock(value);}
 }

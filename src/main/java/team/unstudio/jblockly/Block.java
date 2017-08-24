@@ -21,7 +21,6 @@ import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.property.StringProperty;
 import javafx.beans.property.StringPropertyBase;
 import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
 import javafx.collections.ObservableList;
 import javafx.css.CssMetaData;
 import javafx.css.Styleable;
@@ -322,14 +321,7 @@ public class Block extends Region implements IBlockly,SVGPathHelper{
 	private final void setWorkspace(BlockWorkspace workspace){workspacePropertyImpl().set(workspace);}
 	public final BlockWorkspace getWorkspace(){return workspace==null?null:workspace.get();}
 	public final ReadOnlyObjectProperty<BlockWorkspace> workspaceProperty(){return workspacePropertyImpl().getReadOnlyProperty();}
-	private final ChangeListener<BlockWorkspace> workspaceListener = new ChangeListener<BlockWorkspace>() {
-		
-		@Override
-		public void changed(ObservableValue<? extends BlockWorkspace> observable, BlockWorkspace oldValue,
-				BlockWorkspace newValue) {
-			setWorkspace(newValue);
-		}
-	};
+	private final ChangeListener<BlockWorkspace> workspaceListener = (observable, oldValue, newValue)->setWorkspace(newValue);
 	
 	private double tempOldX, tempOldY;
 	private boolean performingLayout;
@@ -347,6 +339,9 @@ public class Block extends Region implements IBlockly,SVGPathHelper{
 			if (!isMovable())
 				return;
 
+			if(getWorkspace()==null)
+				return;
+			
 			addToWorkspace();
 
 			Point2D pos = getRelativeWorkspace();
@@ -403,7 +398,7 @@ public class Block extends Region implements IBlockly,SVGPathHelper{
 			return;
 		} else if (oldParent instanceof BlockWorkspace) {
 			toFront();
-		} else if (oldParent instanceof BlockSlot) {
+		} else {
 			Point2D pos = getRelativeWorkspace();
 			getWorkspace().getChildren().add(this);
 			setLayoutX(pos.getX());

@@ -20,6 +20,10 @@ public class BlockWorkspace extends Pane implements IBlockly{
 	final void setMovingBlock(Block block){movingBlockPropertyImpl().set(block);}
 	public final ReadOnlyObjectProperty<Block> movingBlockProperty(){return movingBlockPropertyImpl().getReadOnlyProperty();}
 	public final Block getMovingBlock(){return movingBlock==null?null:movingBlock.get();}
+	
+	private final ReadOnlyObjectWrapper<BlockWorkspace> workspace = new ReadOnlyObjectWrapper<BlockWorkspace>(this, "workspace", this);
+	public BlockWorkspace getWorkspace() {return this;}
+	public ReadOnlyObjectProperty<BlockWorkspace> workspaceProperty() {return workspace.getReadOnlyProperty();}
 
 	public void addBlock(Block block) {
 		if (block.getParent()!=null&&block.getWorkspace().equals(this)) {
@@ -54,8 +58,4 @@ public class BlockWorkspace extends Pane implements IBlockly{
 	public void tryConnectBlock(Block block,Point2D point){
 		tryConnectBlock(block, point.getX(), point.getY());
 	}
-	
-	private final ReadOnlyObjectWrapper<BlockWorkspace> workspace = new ReadOnlyObjectWrapper<BlockWorkspace>(this, "workspace", this);
-	public BlockWorkspace getWorkspace() {return this;}
-	public ReadOnlyObjectProperty<BlockWorkspace> workspaceProperty() {return workspace.getReadOnlyProperty();}
 }
