@@ -1,24 +1,22 @@
-package team.unstudio.jblockly;
+package team.unstudio.jblockly.component;
 
 import java.util.List;
 
-import javafx.beans.InvalidationListener;
-import javafx.beans.Observable;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.DoublePropertyBase;
 import javafx.beans.property.ListProperty;
 import javafx.beans.property.ListPropertyBase;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.ReadOnlyObjectWrapper;
-import javafx.beans.value.ChangeListener;
 import javafx.collections.FXCollections;
-import javafx.collections.ListChangeListener;
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.geometry.VPos;
 import javafx.scene.Node;
-import javafx.scene.Parent;
 import javafx.scene.layout.Pane;
+import team.unstudio.jblockly.Block;
+import team.unstudio.jblockly.BlockWorkspace;
+import team.unstudio.jblockly.IBlockly;
 import team.unstudio.jblockly.util.IBlockBuilder;
 
 public class BlockList extends Pane implements IBlockly{
@@ -64,7 +62,7 @@ public class BlockList extends Pane implements IBlockly{
 				
 				@Override
 				public String getName() {
-					return "vSpacing";
+					return "spacing";
 				}
 				
 				@Override
@@ -79,14 +77,18 @@ public class BlockList extends Pane implements IBlockly{
 	public final void setSpacing(double value){spacingProperty().set(value);}
 	
 	public BlockList() {
-		buildersProperty().addListener((observable, oldValue, newValue)->updateBlock());
+		buildersProperty().addListener((observable, oldValue, newValue)->requestLayout());
 		
 		parentProperty().addListener((observable, oldValue, newValue)->{
-			if(newValue instanceof BlockWorkspace)
+			if(newValue instanceof BlockWorkspace){
 				setWorkspace(((IBlockly)newValue).getWorkspace());
-			else 
+			}else{
 				setWorkspace(null);
+			}
 		});
+		
+		setPadding(new Insets(20));
+		setPrefSize(USE_COMPUTED_SIZE, USE_COMPUTED_SIZE);
 	}
 	
 	private boolean updatingBlock;
@@ -107,6 +109,8 @@ public class BlockList extends Pane implements IBlockly{
 	private boolean performingLayout;
 	@Override
 	public void requestLayout() {
+		if(updatingBlock)
+			return;
 		if(performingLayout) 
 			return;
 
@@ -115,6 +119,8 @@ public class BlockList extends Pane implements IBlockly{
 
 	@Override
 	protected void layoutChildren() {
+		if(updatingBlock)
+			return;
 		if(performingLayout) 
 			return;
 		performingLayout = true;
@@ -134,5 +140,35 @@ public class BlockList extends Pane implements IBlockly{
 		}
 		
 		performingLayout = false;
+	}
+	
+	@Override
+	protected double computePrefWidth(double height) {
+		List<Node> managed = getManagedChildren();
+		
+		double width = 0;
+		for(Node node:managed){
+			double twidth = node.prefWidth(-1);
+			if(width<twidth)
+				width=twidth;
+		}
+		
+		Insets insets = getInsets();
+		return insets.getLeft() + width + insets.getRight();
+	}
+	
+	@Override
+	protected double computePrefHeight(double width) {
+		double spacing = getSpacing();
+		List<Node> managed = getManagedChildren();
+		
+		double height = 0;
+		for(Node node:managed){
+			double theight = node.prefHeight(-1);
+			height+=theight+spacing;
+		}
+		
+		Insets insets = getInsets();
+		return insets.getTop() + height - spacing + insets.getBottom();
 	}
 }

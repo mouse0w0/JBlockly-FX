@@ -1,4 +1,4 @@
-package team.unstudio.jblockly;
+package team.unstudio.jblockly.component;
 
 import javafx.beans.property.StringProperty;
 

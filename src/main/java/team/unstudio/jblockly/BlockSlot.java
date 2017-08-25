@@ -14,6 +14,7 @@ import javafx.geometry.HPos;
 import javafx.geometry.VPos;
 import javafx.scene.Parent;
 import javafx.scene.layout.Region;
+import team.unstudio.jblockly.component.IBlockInput;
 import team.unstudio.jblockly.util.IBlockBuilder;
 
 public class BlockSlot extends Region implements BlockGlobal,IBlockly,IBlockInput<Block>{

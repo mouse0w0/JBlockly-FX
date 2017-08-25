@@ -11,6 +11,7 @@ import com.google.gson.JsonParser;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
+import javafx.scene.paint.Color;
 import team.unstudio.jblockly.Block;
 import team.unstudio.jblockly.BlockSlot;
 import team.unstudio.jblockly.ConnectionType;
@@ -53,6 +54,20 @@ public class SimpleBlockBuilder implements IBlockBuilder{
 	public String getRegistyName(){return registyName;}
 	public SimpleBlockBuilder setRegistyName(String registyName){
 		this.registyName = registyName;
+		return this;
+	}
+	
+	private Color fill;
+	public Color getFill(){return fill;}
+	public SimpleBlockBuilder setFill(Color fill){
+		this.fill = fill;
+		return this;
+	}
+	
+	private Color stroke;
+	public Color getStroke(){return stroke;}
+	public SimpleBlockBuilder setStroke(Color stroke){
+		this.stroke = stroke;
 		return this;
 	}
 	
@@ -121,6 +136,8 @@ public class SimpleBlockBuilder implements IBlockBuilder{
 	public Block build(){
 		Block block = new Block();
 		block.setConnectionType(connectionType);
+		block.setFill(fill==null?Color.GRAY:fill);
+		block.setStroke(stroke==null?Color.BLACK:stroke);
 		for(NodeBuilder nb:builders)
 			block.getChildren().add(nb.build());
 		return block;
@@ -128,7 +145,10 @@ public class SimpleBlockBuilder implements IBlockBuilder{
 	
 	public String toJson(){
 		StringBuilder sb = new StringBuilder("{\"name\":\"").append(getRegistyName())
-				.append("\",\"connectionType\":\"").append(connectionType.name()).append("\",\"children\":[");
+				.append("\",\"connectionType\":\"").append(connectionType.name())
+				.append("\",\"fill\":\"").append(fill==null?Color.GRAY:fill)
+				.append("\",\"stroke\":\"").append(stroke==null?Color.BLACK:stroke)
+				.append("\",\"children\":[");
 		builders.stream().forEach(builder->sb.append(builder.toJson()).append(","));
 		return sb.substring(0, sb.length()-1)+"]}";
 	}
@@ -139,6 +159,8 @@ public class SimpleBlockBuilder implements IBlockBuilder{
 		JsonObject jsonObject = new JsonParser().parse(json).getAsJsonObject();
 		setRegistyName(jsonObject.get("name").getAsString());
 		setConnectionType(ConnectionType.valueOf(jsonObject.get("connectionType").getAsString()));
+		setFill(Color.valueOf(jsonObject.get("fill").getAsString()));
+		setStroke(Color.valueOf(jsonObject.get("stroke").getAsString()));
 		jsonObject.get("children").getAsJsonArray().forEach(element->{
 			if(element.isJsonObject())
 				addNodeBuilder(newNodeBuilder(element.getAsJsonObject()));
