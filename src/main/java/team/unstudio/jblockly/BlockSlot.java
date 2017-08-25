@@ -14,7 +14,7 @@ import javafx.geometry.HPos;
 import javafx.geometry.VPos;
 import javafx.scene.Parent;
 import javafx.scene.layout.Region;
-import team.unstudio.jblockly.component.IBlockInput;
+import team.unstudio.jblockly.input.IBlockInput;
 import team.unstudio.jblockly.util.IBlockBuilder;
 
 public class BlockSlot extends Region implements BlockGlobal,IBlockly,IBlockInput<Block>{
@@ -274,7 +274,6 @@ public class BlockSlot extends Region implements BlockGlobal,IBlockly,IBlockInpu
 	}
 	
 	private StringProperty name;
-	@Override
 	public StringProperty name() {
 		if(name==null){
 			name = new StringPropertyBase() {
@@ -292,11 +291,7 @@ public class BlockSlot extends Region implements BlockGlobal,IBlockly,IBlockInpu
 		}
 		return name;
 	}
-	@Override
-	public String getName() {
-		return null;
-	}
-	@Override
+	public String getName() {return name == null?"":name.get();}
 	public void setName(String name) {name().set(name);}
 	@Override
 	public Block getValue() {return getBlock();}

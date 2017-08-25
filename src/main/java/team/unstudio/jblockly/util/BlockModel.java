@@ -2,30 +2,27 @@ package team.unstudio.jblockly.util;
 
 import java.util.HashMap;
 
-import javafx.scene.control.ChoiceBox;
-import javafx.scene.control.ComboBox;
-import javafx.scene.control.TextField;
-import javafx.scene.control.ToggleButton;
-import team.unstudio.jblockly.Block;
-import team.unstudio.jblockly.BlockSlot;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
+import team.unstudio.jblockly.Block;
+import team.unstudio.jblockly.input.IBlockInput;
+
+//TODO:
 public final class BlockModel extends HashMap<String, Object>{
 	
 	public static BlockModel getBlockModel(Block block){
-		BlockModel model = new BlockModel(Block.getNodeName(block));
+		BlockModel model = new BlockModel(block.getName());
 		
-		for(Entry<String, javafx.scene.Node> entry:block.getNameToNode().entrySet()){
-			javafx.scene.Node node = entry.getValue();
-			if(node instanceof BlockSlot)
-				model.put(entry.getKey(), getBlockModel(((BlockSlot) node).getBlock()));
-			else if(node instanceof TextField)
-				model.put(entry.getKey(), ((TextField) node).getText());
-			else if(node instanceof ChoiceBox)
-				model.put(entry.getKey(), ((ChoiceBox<?>) node).getValue());
-			else if(node instanceof ComboBox)
-				model.put(entry.getKey(), ((ComboBox<?>) node).getValue());
-			else if(node instanceof ToggleButton)
-				model.put(entry.getKey(), ((ToggleButton) node).isSelected());
+		for(javafx.scene.Node node:block.getChildren()){
+			if(!(node instanceof IBlockInput))
+				continue;
+				
+			IBlockInput<?> input = (IBlockInput<?>) node;
+			if(input instanceof Block)
+				model.put(input.getName(), getBlockModel((Block) input));
+			else
+				model.put(input.getName(), input.getValue());
 		}
 		
 		return model;
@@ -47,29 +44,31 @@ public final class BlockModel extends HashMap<String, Object>{
 		this.name = name;
 	}
 	
-	public String getString(String key){
-		return get(key).toString();
-	}
-	
 	public BlockModel getBlockModel(String key){
-		return (BlockModel) get(key);
+		return get(key);
 	}
 	
-	public boolean getBoolean(String key){
-		return (boolean) get(key);
+	public <T> T get(String key){
+		return get(key);
+	}
+	
+	public String toJson() {
+		JsonObject object = new JsonObject();
+		object.addProperty("name", getName());
+		JsonObject data = new JsonObject();
+		entrySet().forEach(entry->data.addProperty(entry.getKey(), entry.getValue().toString()));
+		object.add("data", data);
+		return object.toString();
+	}
+	
+	public void fromJson(String json){
+		JsonObject object = new JsonParser().parse(json).getAsJsonObject();
+		setName(object.get("name").getAsString());
+		object.get("data").getAsJsonObject().entrySet().forEach(entry->put(entry.getKey(), entry.getValue()));
 	}
 	
 	@Override
 	public String toString() {
-		StringBuilder builder = new StringBuilder();
-		builder.append("{\"name\":\"").append(name).append("\",\"data\":{");
-		for(Entry<String, Object> key:entrySet()){
-			builder.append("\"").append(key.getKey()).append("\":");
-			if(key.getValue() instanceof BlockModel)
-				builder.append(key.getKey().toString());
-			else
-				builder.append("\"").append(key.getValue()).append("\"");
-		}
-		return builder.append("}}").toString();
+		return toJson();
 	}
 }

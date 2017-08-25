@@ -42,7 +42,7 @@ public class Main extends Application {
 				.addLabel("=").addBlockSlot(null, SlotType.INSERT);
 		
 		BlockList blockList = new BlockList();
-		blockList.buildersProperty().addAll(main,ifBlock,end,string,getDalao,dalao,set,nvZhuang);
+		blockList.buildersProperty().addAll(main,ifBlock,end,string,getDalao,dalao,set);
 		
 		BlockWorkspace workspace = new BlockWorkspace();
 		workspace.getChildren().add(blockList);

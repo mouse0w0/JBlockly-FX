@@ -2,11 +2,7 @@ package team.unstudio.jblockly;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import com.sun.javafx.css.converters.BooleanConverter;
 import com.sun.javafx.css.converters.EnumConverter;
 import com.sun.javafx.css.converters.SizeConverter;
@@ -47,7 +43,6 @@ import team.unstudio.jblockly.util.SVGPathHelper;
 public class Block extends Region implements IBlockly,SVGPathHelper{
 	
 	private static final String MARGIN_CONSTRAINT = "block-margin";
-	private static final String NAME_CONSTRAINT = "block-name";
 
 	private static void setConstraint(Node node, Object key, Object value) {
 		if (value == null) {
@@ -76,14 +71,6 @@ public class Block extends Region implements IBlockly,SVGPathHelper{
 
 	public static Insets getMargin(Node child) {
 		return (Insets) getConstraint(child, MARGIN_CONSTRAINT);
-	}
-	
-	public static void setNodeName(Node child, String value) {
-		setConstraint(child, NAME_CONSTRAINT, value);
-	}
-
-	public static String getNodeName(Node child) {
-		return (String) getConstraint(child, NAME_CONSTRAINT);
 	}
 
 	private StyleableBooleanProperty movable;
@@ -283,6 +270,27 @@ public class Block extends Region implements IBlockly,SVGPathHelper{
         ConnectionType local = getConnectionType();
         return local == null ? ConnectionType.NONE : local;
     }
+    
+	private StringProperty name;
+	public final StringProperty name() {
+		if(name==null){
+			name = new StringPropertyBase() {
+				
+				@Override
+				public String getName() {
+					return "name";
+				}
+				
+				@Override
+				public Object getBean() {
+					return Block.this;
+				}
+			};
+		}
+		return name;
+	}
+	public final String getName() {return name == null?"":name.get();}
+	public final void setName(String name) {name().set(name);}
 	
 	private final SVGPath svgPath = new SVGPath();
 	public final SVGPath getSVGPath(){return svgPath;}
@@ -329,10 +337,12 @@ public class Block extends Region implements IBlockly,SVGPathHelper{
 	private StringBuilder tempStringBuilder;
 	
 	private List<BlockSlot> cacheSlots;
-	private Map<String, Node> cacheNameToNode;
+	
+	private static final String DEFAULT_STYLE_CLASS = "block";
 	
 	public Block() {
-		getStyleClass().add("block");
+		getStyleClass().addAll(DEFAULT_STYLE_CLASS);
+		
 		getChildren().add(svgPath);
 
 		setOnMousePressed(event -> {
@@ -455,46 +465,6 @@ public class Block extends Region implements IBlockly,SVGPathHelper{
 		default:
 			return null;
 		}
-	}
-
-	public Set<String> getNodeNames() {
-		return getNameToNode().keySet();
-	}
-	
-	public Map<String,Node> getNameToNode() {
-		if(cacheNameToNode==null)
-			cacheNameToNode = new HashMap<>();
-		
-		cacheNameToNode.clear();
-		for(Node node:getChildren()){
-			String name = getNodeName(node);
-			if(name!=null)
-				cacheNameToNode.put(name, node);
-		}
-		return Collections.unmodifiableMap(cacheNameToNode);
-	}
-
-	public Node getNode(String name) {
-		return getNameToNode().get(name);
-	}
-
-	public void addNode(String name, Node node) {
-		if (getNameToNode().containsKey(name)) {
-			return;
-		}
-		setNodeName(node, name);
-		getChildren().add(node);
-	}
-
-	public void removeNode(String name) {
-		if (!getNameToNode().containsKey(name)) {
-			return;
-		}
-		getChildren().remove(getNameToNode().get(name));
-	}
-
-	public boolean containNodeName(String name) {
-		return getNameToNode().containsKey(name);
 	}
 
 	@Override
@@ -895,5 +865,9 @@ public class Block extends Region implements IBlockly,SVGPathHelper{
         Path2D path = new Path2D(windingRule);
         path.appendSVGPath(content);
         return path;
+    }
+    
+    private class BlockLineWrapper{
+    	//TODO: Replace cacheSlots
     }
 }

@@ -10,12 +10,12 @@ import com.google.gson.JsonParser;
 
 import javafx.scene.Node;
 import javafx.scene.control.Label;
-import javafx.scene.control.TextField;
 import javafx.scene.paint.Color;
 import team.unstudio.jblockly.Block;
 import team.unstudio.jblockly.BlockSlot;
 import team.unstudio.jblockly.ConnectionType;
 import team.unstudio.jblockly.SlotType;
+import team.unstudio.jblockly.input.BlockTextField;
 
 public class SimpleBlockBuilder implements IBlockBuilder{
 	
@@ -234,7 +234,7 @@ public class SimpleBlockBuilder implements IBlockBuilder{
 			if(defaultBlock!=null)
 				slot.setDefaultBlock(defaultBlock);
 			if(name!=null&&!name.isEmpty())
-				Block.setNodeName(slot, name);
+				slot.setName(name);
 			return slot;
 		}
 
@@ -277,7 +277,9 @@ public class SimpleBlockBuilder implements IBlockBuilder{
 
 		@Override
 		public Node build() {
-			TextField node = new TextField(text);
+			BlockTextField node = new BlockTextField();
+			node.setName(name);
+			node.setText(text);
 			node.setPromptText(defaultText);
 			return node;
 		}
