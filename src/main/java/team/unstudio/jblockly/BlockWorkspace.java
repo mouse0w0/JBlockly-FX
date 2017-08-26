@@ -6,9 +6,9 @@ import java.util.List;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.geometry.Point2D;
-import javafx.scene.Parent;
 import javafx.scene.layout.Pane;
 
+//TODO: registy blocks
 public class BlockWorkspace extends Pane implements IBlockly{
 	
 	private ReadOnlyObjectWrapper<Block> movingBlock;
@@ -26,21 +26,13 @@ public class BlockWorkspace extends Pane implements IBlockly{
 	public ReadOnlyObjectProperty<BlockWorkspace> workspaceProperty() {return workspace.getReadOnlyProperty();}
 
 	public void addBlock(Block block) {
-		if (block.getParent()!=null&&block.getWorkspace().equals(this)) {
+		if (block.getWorkspace().equals(this)) {
 			block.addToWorkspace();
 		} else {
 			getChildren().add(block);
 			block.setLayoutX(0);
 			block.setLayoutY(0);
 		}
-	}
-	
-	public void removeBlock(Block block){
-		Parent parent = block.getParent();
-		if(parent instanceof BlockSlot)
-			((BlockSlot) parent).removeBlock();
-		else if(parent instanceof Pane)
-			((Pane) parent).getChildren().remove(block);
 	}
 	
 	public List<Block> getBlocks() {

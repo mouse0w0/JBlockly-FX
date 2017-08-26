@@ -1,4 +1,4 @@
-package team.unstudio.jblockly;
+package team.unstudio.jblockly.input;
 
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.BooleanPropertyBase;
@@ -14,7 +14,11 @@ import javafx.geometry.HPos;
 import javafx.geometry.VPos;
 import javafx.scene.Parent;
 import javafx.scene.layout.Region;
-import team.unstudio.jblockly.input.IBlockInput;
+import team.unstudio.jblockly.Block;
+import team.unstudio.jblockly.BlockGlobal;
+import team.unstudio.jblockly.BlockWorkspace;
+import team.unstudio.jblockly.IBlockly;
+import team.unstudio.jblockly.SlotType;
 import team.unstudio.jblockly.util.IBlockBuilder;
 
 public class BlockSlot extends Region implements BlockGlobal,IBlockly,IBlockInput<Block>{
@@ -232,45 +236,6 @@ public class BlockSlot extends Region implements BlockGlobal,IBlockly,IBlockInpu
 		default:
 			return BLOCK_SLOT_HEIGHT;
 		}
-	}
-	
-	private double lineWidth = 0, lineHeight = 0;
-	private int firstNode = 0, lastNode = 0;
-
-	double getLineHeight() {
-		return lineHeight;
-	}
-
-	void setLineHeight(double lineHeight) {
-		this.lineHeight = lineHeight;
-	}
-
-	double getLineWidth() {
-		switch (getSlotType()) {
-		case BRANCH:
-			return lineWidth<BRANCH_MIN_WIDTH?BRANCH_MIN_WIDTH:lineWidth;
-		case NEXT:
-			return 0;
-		default:
-			return lineWidth<BLOCK_SLOT_MIN_LINE_WIDTH?BLOCK_SLOT_MIN_LINE_WIDTH:lineWidth;
-		}
-	}
-
-	void setLineWidth(double lineWidth) {
-		this.lineWidth = lineWidth;
-	}
-
-	int getFirstNode() {
-		return firstNode;
-	}
-	
-	int getLastNode() {
-		return lastNode;
-	}
-
-	void setNodeRange(int firstNode,int lastNode) {
-		this.firstNode = firstNode;
-		this.lastNode = lastNode;
 	}
 	
 	private StringProperty name;

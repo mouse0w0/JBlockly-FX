@@ -6,9 +6,6 @@ import java.util.List;
 import com.sun.javafx.css.converters.BooleanConverter;
 import com.sun.javafx.css.converters.EnumConverter;
 import com.sun.javafx.css.converters.SizeConverter;
-import com.sun.javafx.geom.Path2D;
-import com.sun.javafx.geom.PathIterator;
-
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.beans.property.ReadOnlyBooleanWrapper;
@@ -32,11 +29,12 @@ import javafx.geometry.Pos;
 import javafx.geometry.VPos;
 import javafx.scene.Node;
 import javafx.scene.Parent;
+import javafx.scene.layout.Pane;
 import javafx.scene.layout.Region;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
-import javafx.scene.shape.FillRule;
 import javafx.scene.shape.SVGPath;
+import team.unstudio.jblockly.input.BlockSlot;
 import team.unstudio.jblockly.util.SVGPathHelper;
 
 //TODO: Support event
@@ -336,7 +334,7 @@ public class Block extends Region implements IBlockly,SVGPathHelper{
 	private double[][] tempArray;
 	private StringBuilder tempStringBuilder;
 	
-	private List<BlockSlot> cacheSlots;
+	private List<BlockLineWrapper> cacheLines;
 	
 	private static final String DEFAULT_STYLE_CLASS = "block";
 	
@@ -417,6 +415,7 @@ public class Block extends Region implements IBlockly,SVGPathHelper{
 	}
 	
 	private Point2D getRelativeWorkspace(){
+		//TODO: Screen relative location
 		BlockWorkspace workspace = getWorkspace();
 		Parent parent = getParent();
 		double x = getLayoutX(), y = getLayoutY();
@@ -429,7 +428,11 @@ public class Block extends Region implements IBlockly,SVGPathHelper{
 	}
 	
 	public void removeBlock(){
-		getWorkspace().removeBlock(this);
+		Parent parent = getParent();
+		if(parent instanceof BlockSlot)
+			((BlockSlot) parent).removeBlock();
+		else if(parent instanceof Pane)
+			((Pane) parent).getChildren().remove(this);
 	}
 	
 	public boolean tryConnectBlock(Block block,double x,double y){
@@ -439,9 +442,11 @@ public class Block extends Region implements IBlockly,SVGPathHelper{
 		if(!getLayoutBounds().contains(x, y))
 			return false;
 		
-		for(BlockSlot slot:cacheSlots)
+		for(BlockLineWrapper line:cacheLines){
+			BlockSlot slot = line.getSlot();
 			if(slot.tryConnectBlock(block, x-slot.getLayoutX(), y-slot.getLayoutY()))
 				return true;
+		}
 		
 		return false;
 	}
@@ -481,14 +486,14 @@ public class Block extends Region implements IBlockly,SVGPathHelper{
 		double vSpace = getVSpacing();
 		double hSpace = getHSpacing();
 		double[][] actualAreaBounds = getTempArray(managed.size());;
-		List<BlockSlot> slots = getLineBounds(managed, vSpace, hSpace, actualAreaBounds);
+		List<BlockLineWrapper> lines = getLineBounds(managed, vSpace, hSpace, actualAreaBounds);
 		
-		if(slots.isEmpty())
+		if(lines.isEmpty())
 			return 0;
 		
 		double width = 0;
-		for(BlockSlot slot:slots){
-			double lineWidth = slot.getLineWidth()+actualAreaBounds[0][slot.getLastNode()+1];
+		for(BlockLineWrapper line:lines){
+			double lineWidth = line.getWidth()+actualAreaBounds[0][line.getFirstNodeIndex()+line.getNodes().size()];
 			if(width<lineWidth) width = lineWidth;
 		}
 		
@@ -503,14 +508,14 @@ public class Block extends Region implements IBlockly,SVGPathHelper{
 		double vSpace = getVSpacing();
 		double hSpace = getHSpacing();
 		double[][] actualAreaBounds = getTempArray(managed.size());;
-		List<BlockSlot> slots = getLineBounds(managed, vSpace, hSpace, actualAreaBounds);
+		List<BlockLineWrapper> lines = getLineBounds(managed, vSpace, hSpace, actualAreaBounds);
 		
-		if(slots.isEmpty())
+		if(lines.isEmpty())
 			return 0;
 		
 		double height = -vSpace;
-		for(BlockSlot slot:slots)
-			height += slot.getLineHeight() + vSpace;
+		for(BlockLineWrapper line:lines)
+			height += line.getHeight() + vSpace;
 		
 		return height;
 		//return getConnectionTypeInternal()==ConnectionType.BOTTOM||getConnectionTypeInternal()==ConnectionType.TOPANDBOTTOM?height-vSpace:height;
@@ -544,10 +549,10 @@ public class Block extends Region implements IBlockly,SVGPathHelper{
 		double vSpace = getVSpacing(); 
 		double hSpace = getHSpacing();
 		double[][] actualAreaBounds = getTempArray(managed.size());
-		List<BlockSlot> slots = getLineBounds(managed, vSpace, hSpace, actualAreaBounds);
+		List<BlockLineWrapper> lines = getLineBounds(managed, vSpace, hSpace, actualAreaBounds);
 		StringBuilder sb = getTempStringBuilder();
 		
-		if(!slots.isEmpty()){
+		if(!lines.isEmpty()){
 			Pos pos = getAlignmentInternal();
 			VPos vpos = pos.getVpos();
 			HPos hpos = pos.getHpos();
@@ -555,19 +560,19 @@ public class Block extends Region implements IBlockly,SVGPathHelper{
 			double x = connectionType==ConnectionType.LEFT?INSERT_WIDTH:0, y = 0;
 			boolean hasNext = false;
 			
-			sb.append(buildTopPath(connectionType, slots.get(0).getLineWidth()));
+			sb.append(buildTopPath(connectionType, lines.get(0).getWidth()));
 	
-			label: for (int i = 0, size = slots.size(); i < size; i++) {
-				BlockSlot slot = slots.get(i);
-				layoutLine(slot, managed, actualAreaBounds, x, y, vSpace, hSpace, hpos, vpos);
+			label: for (int i = 0, size = lines.size(); i < size; i++) {
+				BlockLineWrapper line = lines.get(i);
+				layoutLine(line, actualAreaBounds, x, y, vSpace, hSpace, hpos, vpos);
 				
-				switch (slot.getSlotType()) {
+				switch (line.getSlot().getSlotType()) {
 				case BRANCH:
-					sb.append(buildBranchPath(connectionType,y, slot.getLineWidth(), slot.getLineHeight(),
-							i + 1 == size ? BLOCK_SLOT_MIN_LINE_WIDTH : slots.get(i + 1).getLineWidth()));
+					sb.append(buildBranchPath(connectionType,y, line.getWidth(), line.getHeight(),
+							i + 1 == size ? BLOCK_SLOT_MIN_LINE_WIDTH : lines.get(i + 1).getWidth()));
 					break;
 				case INSERT:
-					sb.append(buildInsertPath(connectionType,y, slot.getLineWidth()));
+					sb.append(buildInsertPath(connectionType,y, line.getWidth()));
 					break;
 				case NEXT:
 					hasNext = true;
@@ -576,7 +581,7 @@ public class Block extends Region implements IBlockly,SVGPathHelper{
 					break;
 				}
 				
-				y += slot.getLineHeight() + vSpace;
+				y += line.getHeight() + vSpace;
 			}
 			if(!hasNext&&connectionType!=ConnectionType.LEFT) y-=vSpace;
 			sb.append(buildBottomPath(connectionType, y));
@@ -588,24 +593,26 @@ public class Block extends Region implements IBlockly,SVGPathHelper{
 		performingLayout = false;
 	}
 
-	private void layoutLine(BlockSlot slot, List<Node> managed, double[][] actualAreaBounds, double left, double top,
+	private void layoutLine(BlockLineWrapper line, double[][] actualAreaBounds, double left, double top,
 			double vSpace,double hSpace, HPos hpos, VPos vpos) {
 		double x = left + hSpace;
 		double y = top + vSpace;
 		
-		for (int i = slot.getFirstNode(), end = slot.getLastNode(); i <= end; i++) {
-			Node child = managed.get(i);
+		for (int i=0,size = line.getNodes().size();i<size;i++) {
+			Node child = line.getNodes().get(i);
 			layoutInArea(child, x, y, child.prefWidth(-1), child.prefHeight(-1), 0, getMargin(child), hpos, vpos);
-			x += actualAreaBounds[0][i] + hSpace;
+			x += actualAreaBounds[0][i+line.getFirstNodeIndex()] + hSpace;
 		}
 		
-		layoutInArea(slot, slot.getSlotType()==SlotType.INSERT?left+slot.getLineWidth()-INSERT_SLOT_WIDTH:left+slot.getLineWidth(), top, slot.prefWidth(-1), slot.prefHeight(-1), 0, null, hpos, vpos);
+		BlockSlot slot = line.getSlot();
+		layoutInArea(slot, slot.getSlotType()==SlotType.INSERT?left+line.getWidth()-INSERT_SLOT_WIDTH:left+line.getWidth(), top, slot.prefWidth(-1), slot.prefHeight(-1), 0, null, hpos, vpos);
 	}
 
-	private List<BlockSlot> getLineBounds(List<Node> managed, double vSpace, double hSpace, double[][] actualAreaBounds) {
-		List<BlockSlot> cacheSlots = cacheSlots();
+	private List<BlockLineWrapper> getLineBounds(List<Node> managed, double vSpace, double hSpace, double[][] actualAreaBounds) {
+		List<BlockLineWrapper> cacheLines = cacheLines();
 		double tempWidth = hSpace, tempHeight = 0, tempMaxWidth = 0;
-		int lastBranchBlock = -1, firstNode = 0;
+		int lastBranchBlockIndex = -1, firstNodeIndex = 0;
+		BlockLineWrapper line = new BlockLineWrapper();
 		
 		label: for (int i = 0, size = managed.size(); i < size; i++) {
 			Node child = managed.get(i);
@@ -619,18 +626,19 @@ public class Block extends Region implements IBlockly,SVGPathHelper{
 			
 			if (child instanceof BlockSlot) {
 				BlockSlot slot = (BlockSlot) child;
-				cacheSlots.add(slot);
-				slot.setLineWidth(tempWidth);
-				slot.setLineHeight(tempHeight);
-				slot.setNodeRange(firstNode,i-1);
+				cacheLines.add(line);
+				line.setSlot(slot);
+				line.setWidth(tempWidth);
+				line.setHeight(tempHeight);
+				line.setFirstNodeIndex(firstNodeIndex);
 				
 				if (tempMaxWidth < tempWidth) tempMaxWidth = tempWidth; // 求最大行宽
 
 				switch(slot.getSlotType()){
 					case BRANCH:
-						int lastSlot = cacheSlots.size() - 1;
-						lineAlign(cacheSlots, lastBranchBlock + 1, lastSlot - 1, tempMaxWidth);
-						lastBranchBlock = lastSlot;
+						int lastLine = cacheLines.size() - 1;
+						lineAlign(cacheLines, lastBranchBlockIndex + 1, lastLine - 1, tempMaxWidth);
+						lastBranchBlockIndex = lastLine;
 						tempMaxWidth = 0;
 						break;
 					case NEXT:
@@ -639,29 +647,32 @@ public class Block extends Region implements IBlockly,SVGPathHelper{
 						break;
 				}
 				
-				firstNode = i + 1;
+				firstNodeIndex = i + 1;
 				tempWidth = hSpace;
 				tempHeight = 0;
-			} else 
+				line = new BlockLineWrapper();
+			} else {
+				line.getNodes().add(child);
 				tempWidth += actualAreaBounds[0][i] + hSpace;
+			}
 		}	
-		lineAlign(cacheSlots, lastBranchBlock + 1, cacheSlots.size() - 1, tempMaxWidth); //最后一次行对齐
-		return cacheSlots;
+		lineAlign(cacheLines, lastBranchBlockIndex + 1, cacheLines.size() - 1, tempMaxWidth); //最后一次行对齐
+		return cacheLines;
 	}
 	
-	private void lineAlign(List<BlockSlot> managed, int start, int end, double width) {
+	private void lineAlign(List<BlockLineWrapper> managed, int start, int end, double width) {
 		if(start==end)
 			return;
 		
 		for (int i = start; i <= end; i++) 
-			managed.get(i).setLineWidth(width);
+			managed.get(i).setWidth(width);
 	}
 	
-	private List<BlockSlot> cacheSlots(){
-		if(cacheSlots == null)
-			cacheSlots = new ArrayList<>();
-		cacheSlots.clear();
-		return cacheSlots;
+	private List<BlockLineWrapper> cacheLines(){
+		if(cacheLines == null)
+			cacheLines = new ArrayList<>();
+		cacheLines.clear();
+		return cacheLines;
 	}
 
 	private double[][] getTempArray(int size) {
@@ -860,14 +871,54 @@ public class Block extends Region implements IBlockly,SVGPathHelper{
 //        return getClassCssMetaData();
 //    }
     
-    public Path2D createSVGPath2D(String content,FillRule fillRule) {
-        int windingRule = fillRule == FillRule.NON_ZERO ? PathIterator.WIND_NON_ZERO : PathIterator.WIND_EVEN_ODD;
-        Path2D path = new Path2D(windingRule);
-        path.appendSVGPath(content);
-        return path;
-    }
-    
     private class BlockLineWrapper{
-    	//TODO: Replace cacheSlots
+    	//TODO: Replace cacheSlots\
+    	private BlockSlot slot;
+    	private final List<Node> nodes = new ArrayList<>();
+    	private double width = 0, height = 0;
+    	private int firstNodeIndex;
+
+    	public double getHeight() {
+    		return height;
+    	}
+
+    	public void setHeight(double lineHeight) {
+    		this.height = lineHeight;
+    	}
+
+    	public double getWidth() {
+    		switch (slot.getSlotType()) {
+    		case BRANCH:
+    			return width<BRANCH_MIN_WIDTH?BRANCH_MIN_WIDTH:width;
+    		case NEXT:
+    			return 0;
+    		default:
+    			return width<BLOCK_SLOT_MIN_LINE_WIDTH?BLOCK_SLOT_MIN_LINE_WIDTH:width;
+    		}
+    	}
+
+    	public void setWidth(double lineWidth) {
+    		this.width = lineWidth;
+    	}
+
+    	public List<Node> getNodes() {
+    		return nodes;
+    	}
+
+		public BlockSlot getSlot() {
+			return slot;
+		}
+
+		public void setSlot(BlockSlot slot) {
+			this.slot = slot;
+		}
+
+		public int getFirstNodeIndex() {
+			return firstNodeIndex;
+		}
+
+		public void setFirstNodeIndex(int firstNodeIndex) {
+			this.firstNodeIndex = firstNodeIndex;
+		}
     }
 }

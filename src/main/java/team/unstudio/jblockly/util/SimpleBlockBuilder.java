@@ -12,9 +12,9 @@ import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.paint.Color;
 import team.unstudio.jblockly.Block;
-import team.unstudio.jblockly.BlockSlot;
 import team.unstudio.jblockly.ConnectionType;
 import team.unstudio.jblockly.SlotType;
+import team.unstudio.jblockly.input.BlockSlot;
 import team.unstudio.jblockly.input.BlockTextField;
 
 public class SimpleBlockBuilder implements IBlockBuilder{
