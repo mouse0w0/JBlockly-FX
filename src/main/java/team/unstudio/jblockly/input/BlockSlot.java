@@ -18,7 +18,6 @@ import team.unstudio.jblockly.Block;
 import team.unstudio.jblockly.BlockGlobal;
 import team.unstudio.jblockly.BlockWorkspace;
 import team.unstudio.jblockly.IBlockly;
-import team.unstudio.jblockly.SlotType;
 import team.unstudio.jblockly.util.IBlockBuilder;
 
 public class BlockSlot extends Region implements BlockGlobal,IBlockly,IBlockInput<Block>{
@@ -147,11 +146,34 @@ public class BlockSlot extends Region implements BlockGlobal,IBlockly,IBlockInpu
 	public final ReadOnlyObjectProperty<BlockWorkspace> workspaceProperty(){return workspacePropertyImpl().getReadOnlyProperty();}
 	private final ChangeListener<BlockWorkspace> workspaceListener = (observable, oldValue, newValue)->setWorkspace(newValue);
 	
+	private StringProperty name;
+	public StringProperty name() {
+		if(name==null){
+			name = new StringPropertyBase() {
+				
+				@Override
+				public String getName() {
+					return "name";
+				}
+				
+				@Override
+				public Object getBean() {
+					return BlockSlot.this;
+				}
+			};
+		}
+		return name;
+	}
+	public String getName() {return name == null?"":name.get();}
+	public void setName(String name) {name().set(name);}
+	
+	private static final String DEFAULT_STYLE_CLASS="block-slot";
 	public BlockSlot() {
 		this(SlotType.NONE);
 	}
 
 	public BlockSlot(SlotType slotType) {
+		getStyleClass().addAll(DEFAULT_STYLE_CLASS);
 		setSlotType(slotType);
 		
 		setPickOnBounds(false);
@@ -238,26 +260,6 @@ public class BlockSlot extends Region implements BlockGlobal,IBlockly,IBlockInpu
 		}
 	}
 	
-	private StringProperty name;
-	public StringProperty name() {
-		if(name==null){
-			name = new StringPropertyBase() {
-				
-				@Override
-				public String getName() {
-					return "name";
-				}
-				
-				@Override
-				public Object getBean() {
-					return BlockSlot.this;
-				}
-			};
-		}
-		return name;
-	}
-	public String getName() {return name == null?"":name.get();}
-	public void setName(String name) {name().set(name);}
 	@Override
 	public Block getValue() {return getBlock();}
 	@Override

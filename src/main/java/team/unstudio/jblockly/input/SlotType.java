@@ -1,4 +1,6 @@
-package team.unstudio.jblockly;
+package team.unstudio.jblockly.input;
+
+import team.unstudio.jblockly.ConnectionType;
 
 public enum SlotType {
 	NONE, 

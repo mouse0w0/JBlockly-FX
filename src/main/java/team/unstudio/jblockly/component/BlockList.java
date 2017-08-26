@@ -1,7 +1,5 @@
 package team.unstudio.jblockly.component;
 
-import java.util.List;
-
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.DoublePropertyBase;
 import javafx.beans.property.ListProperty;
@@ -9,17 +7,15 @@ import javafx.beans.property.ListPropertyBase;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.collections.FXCollections;
-import javafx.geometry.HPos;
 import javafx.geometry.Insets;
-import javafx.geometry.VPos;
-import javafx.scene.Node;
-import javafx.scene.layout.Pane;
-import team.unstudio.jblockly.Block;
+import javafx.scene.control.Control;
+import javafx.scene.control.Skin;
 import team.unstudio.jblockly.BlockWorkspace;
 import team.unstudio.jblockly.IBlockly;
+import team.unstudio.jblockly.component.skin.BlockListSkin;
 import team.unstudio.jblockly.util.IBlockBuilder;
 
-public class BlockList extends Pane implements IBlockly{
+public class BlockList extends Control implements IBlockly{
 	
 	private ListProperty<IBlockBuilder> builders;
 	public final ListProperty<IBlockBuilder> buildersProperty(){
@@ -76,9 +72,9 @@ public class BlockList extends Pane implements IBlockly{
 	public final double getSpacing(){return spacing==null?20:spacing.get();}
 	public final void setSpacing(double value){spacingProperty().set(value);}
 	
+	private static final String DEFAULT_STYLE_CLASS = "block-list";
 	public BlockList() {
-		buildersProperty().addListener((observable, oldValue, newValue)->requestLayout());
-		
+		getStyleClass().setAll(DEFAULT_STYLE_CLASS);
 		parentProperty().addListener((observable, oldValue, newValue)->{
 			if(newValue instanceof BlockWorkspace){
 				setWorkspace(((IBlockly)newValue).getWorkspace());
@@ -91,84 +87,8 @@ public class BlockList extends Pane implements IBlockly{
 		setPrefSize(USE_COMPUTED_SIZE, USE_COMPUTED_SIZE);
 	}
 	
-	private boolean updatingBlock;
-	private void updateBlock(){
-		if(updatingBlock)
-			return;
-		updatingBlock = true;
-		
-		getChildren().clear();
-		buildersProperty().get().forEach(builder->{
-			Block block = builder.build();
-			getChildren().add(block);
-		});
-		
-		updatingBlock = false;
-	}
-	
-	private boolean performingLayout;
 	@Override
-	public void requestLayout() {
-		if(updatingBlock)
-			return;
-		if(performingLayout) 
-			return;
-
-		super.requestLayout();
-	}
-
-	@Override
-	protected void layoutChildren() {
-		if(updatingBlock)
-			return;
-		if(performingLayout) 
-			return;
-		performingLayout = true;
-		
-		updateBlock();
-		
-		double spacing = getSpacing();
-		List<Node> managed = getManagedChildren();
-		
-		Insets insets = getInsets();
-		double x = insets.getLeft();
-		double y = insets.getTop();
-		for(Node node:managed){
-			double width = node.prefWidth(-1),height = node.prefHeight(-1);
-			layoutInArea(node, x, y, width, height, 0, HPos.LEFT, VPos.TOP);
-			y += height + spacing;
-		}
-		
-		performingLayout = false;
-	}
-	
-	@Override
-	protected double computePrefWidth(double height) {
-		List<Node> managed = getManagedChildren();
-		
-		double width = 0;
-		for(Node node:managed){
-			double twidth = node.prefWidth(-1);
-			if(width<twidth)
-				width=twidth;
-		}
-		
-		Insets insets = getInsets();
-		return insets.getLeft() + width + insets.getRight();
-	}
-	
-	@Override
-	protected double computePrefHeight(double width) {
-		double spacing = getSpacing();
-		List<Node> managed = getManagedChildren();
-		
-		double height = 0;
-		for(Node node:managed){
-			double theight = node.prefHeight(-1);
-			height+=theight+spacing;
-		}
-		
-		Insets insets = getInsets();
-		return insets.getTop() + height - spacing + insets.getBottom();
+	protected Skin<?> createDefaultSkin() {
+		return new BlockListSkin(this);
 	}
 }

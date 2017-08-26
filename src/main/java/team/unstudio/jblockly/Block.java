@@ -7,6 +7,7 @@ import com.sun.javafx.css.converters.BooleanConverter;
 import com.sun.javafx.css.converters.EnumConverter;
 import com.sun.javafx.css.converters.SizeConverter;
 import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.ObjectPropertyBase;
 import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.beans.property.ReadOnlyBooleanWrapper;
 import javafx.beans.property.ReadOnlyObjectProperty;
@@ -35,6 +36,8 @@ import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
 import javafx.scene.shape.SVGPath;
 import team.unstudio.jblockly.input.BlockSlot;
+import team.unstudio.jblockly.input.SlotType;
+import team.unstudio.jblockly.util.IBlockBuilder;
 import team.unstudio.jblockly.util.SVGPathHelper;
 
 //TODO: Support event
@@ -289,6 +292,28 @@ public class Block extends Region implements IBlockly,SVGPathHelper{
 	}
 	public final String getName() {return name == null?"":name.get();}
 	public final void setName(String name) {name().set(name);}
+	
+	private ObjectProperty<IBlockBuilder> builder;
+	public final ObjectProperty<IBlockBuilder> builderProperty(){
+		if(builder == null)
+			builder = new ObjectPropertyBase<IBlockBuilder>() {
+
+				@Override
+				public Object getBean() {
+					return Block.this;
+				}
+
+				@Override
+				public String getName() {
+					return "builder";
+				}
+			
+			};
+		return builder;
+	}
+	public final IBlockBuilder getBuilder(){return builder == null ? null : builder.get();}
+	public final void setBuilder(IBlockBuilder builder){builderProperty().set(builder);}
+	public final boolean hasBuilder(){ return getBuilder() != null;}
 	
 	private final SVGPath svgPath = new SVGPath();
 	public final SVGPath getSVGPath(){return svgPath;}

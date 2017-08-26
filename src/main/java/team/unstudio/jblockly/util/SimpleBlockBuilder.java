@@ -7,15 +7,14 @@ import java.util.Map;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-
 import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.paint.Color;
 import team.unstudio.jblockly.Block;
 import team.unstudio.jblockly.ConnectionType;
-import team.unstudio.jblockly.SlotType;
 import team.unstudio.jblockly.input.BlockSlot;
 import team.unstudio.jblockly.input.BlockTextField;
+import team.unstudio.jblockly.input.SlotType;
 
 public class SimpleBlockBuilder implements IBlockBuilder{
 	
@@ -23,6 +22,7 @@ public class SimpleBlockBuilder implements IBlockBuilder{
 	static{
 		REGISTERED_NODE_BUILDERS.put("label", LabelBuilder.class);
 		REGISTERED_NODE_BUILDERS.put("blockslot", BlockSlotBuilder.class);
+		REGISTERED_NODE_BUILDERS.put("textfield",TextFieldBuilder.class);
 	}
 	
 	public static void registerNodeBuilder(String name,Class<? extends NodeBuilder> clazz){
