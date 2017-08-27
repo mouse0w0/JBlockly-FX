@@ -18,8 +18,8 @@ import team.unstudio.jblockly.util.SVGPathHelper;
 
 public class BlockSkin extends SkinBase<Block> implements BlockGlobal,SVGPathHelper{
 	
-	private final ObservableList<Node> components;
-	private final SVGPath svgPath = new SVGPath();
+	private ObservableList<Node> components;
+	private SVGPath svgPath = new SVGPath();
 
 	public BlockSkin(Block control) {
 		super(control);
@@ -47,8 +47,7 @@ public class BlockSkin extends SkinBase<Block> implements BlockGlobal,SVGPathHel
 			}
 
 		});
-
-
+		
 	}
 	
 	public SVGPath getSVGPath(){
@@ -125,7 +124,7 @@ public class BlockSkin extends SkinBase<Block> implements BlockGlobal,SVGPathHel
 		}
 		
 		BlockSlot slot = line.getSlot();
-		layoutInArea(slot, slot.getSlotType()==SlotType.INSERT?left+line.getWidth()-INSERT_SLOT_WIDTH:left+line.getWidth(), top, slot.prefWidth(-1), slot.prefHeight(-1), 0, null, hpos, vpos);
+		layoutInArea(slot, slot.getSlotType()==SlotType.INSERT?left+line.getWidth()-INSERT_SLOT_WIDTH:left+line.getWidth(),top, slot.prefWidth(-1), slot.prefHeight(-1), 0, null, hpos, vpos);
 	}
 
 	private List<BlockLineWrapper> getLineBounds(List<Node> managed, double vSpace, double hSpace, double[][] actualAreaBounds) {
@@ -270,6 +269,15 @@ public class BlockSkin extends SkinBase<Block> implements BlockGlobal,SVGPathHel
 		
 		return height;
 		//return getConnectionTypeInternal()==ConnectionType.BOTTOM||getConnectionTypeInternal()==ConnectionType.TOPANDBOTTOM?height-vSpace:height;
+	}
+	
+	@Override
+	public void dispose() {
+		cacheLines = null;
+		components = null;
+		svgPath = null;
+		tempStringBuilder = null;
+		super.dispose();
 	}
 	
     static class BlockLineWrapper{

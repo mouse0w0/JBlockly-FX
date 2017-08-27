@@ -17,10 +17,10 @@ import team.unstudio.jblockly.util.IBlockProvider;
 
 public class BlockList extends Control implements IBlockly{
 	
-	private ListProperty<IBlockProvider> builders;
-	public final ListProperty<IBlockProvider> buildersProperty(){
-		if(builders==null)
-			builders = new ListPropertyBase<IBlockProvider>(FXCollections.observableArrayList()) {
+	private ListProperty<IBlockProvider> providers;
+	public final ListProperty<IBlockProvider> providersProperty(){
+		if(providers==null)
+			providers = new ListPropertyBase<IBlockProvider>(FXCollections.observableArrayList()) {
 
 				@Override
 				public Object getBean() {
@@ -29,10 +29,10 @@ public class BlockList extends Control implements IBlockly{
 
 				@Override
 				public String getName() {
-					return "builders";
+					return "providers";
 				}
 			};
-		return builders;
+		return providers;
 	}
 	
 	private ReadOnlyObjectWrapper<BlockWorkspace> workspace;
@@ -42,7 +42,7 @@ public class BlockList extends Control implements IBlockly{
 		}
 		return workspace;
 	}
-	private final void setWorkspace(BlockWorkspace workspace){workspacePropertyImpl().set(workspace);}
+	public final void setWorkspace(BlockWorkspace workspace){workspacePropertyImpl().set(workspace);}
 	public final BlockWorkspace getWorkspace(){return workspace==null?null:workspace.get();}
 	public final ReadOnlyObjectProperty<BlockWorkspace> workspaceProperty(){return workspacePropertyImpl().getReadOnlyProperty();}
 	
@@ -75,13 +75,13 @@ public class BlockList extends Control implements IBlockly{
 	private static final String DEFAULT_STYLE_CLASS = "block-list";
 	public BlockList() {
 		getStyleClass().setAll(DEFAULT_STYLE_CLASS);
-		parentProperty().addListener((observable, oldValue, newValue)->{
-			if(newValue instanceof BlockWorkspace){
-				setWorkspace(((IBlockly)newValue).getWorkspace());
-			}else{
-				setWorkspace(null);
-			}
-		});
+//		parentProperty().addListener((observable, oldValue, newValue)->{
+//			if(newValue instanceof IBlockly){
+//				setWorkspace(((IBlockly)newValue).getWorkspace());
+//			}else{
+//				setWorkspace(null);
+//			}
+//		});
 		
 		setPadding(new Insets(20));
 		setPrefSize(USE_COMPUTED_SIZE, USE_COMPUTED_SIZE);

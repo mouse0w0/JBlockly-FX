@@ -6,9 +6,9 @@ import java.util.List;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.geometry.Point2D;
+import javafx.scene.Node;
 import javafx.scene.layout.Pane;
 
-//TODO: registy blocks
 public class BlockWorkspace extends Pane implements IBlockly{
 	
 	private ReadOnlyObjectWrapper<Block> movingBlock;
@@ -21,6 +21,21 @@ public class BlockWorkspace extends Pane implements IBlockly{
 	public final ReadOnlyObjectProperty<Block> movingBlockProperty(){return movingBlockPropertyImpl().getReadOnlyProperty();}
 	public final Block getMovingBlock(){return movingBlock==null?null:movingBlock.get();}
 	
+	private ReadOnlyObjectWrapper<Block> selectedBlock;
+	final ReadOnlyObjectWrapper<Block> selectedBlockPropertyImpl(){
+		if(selectedBlock == null){
+			selectedBlock = new ReadOnlyObjectWrapper<>(this, "selectedBlock");
+			selectedBlock.addListener((observable,oldValue,newValue)->{
+				if(oldValue!=null)
+					oldValue.setSelected(false);
+			});
+		}
+		return selectedBlock;
+	}
+	final void setSelectedBlock(Block block){selectedBlockPropertyImpl().set(block);}
+	public final ReadOnlyObjectProperty<Block> selectedBlockProperty(){return selectedBlockPropertyImpl().getReadOnlyProperty();}
+	public final Block getSelectedBlock(){return selectedBlock==null?null:selectedBlock.get();}
+	
 	private final ReadOnlyObjectWrapper<BlockWorkspace> workspace = new ReadOnlyObjectWrapper<BlockWorkspace>(this, "workspace", this);
 	public BlockWorkspace getWorkspace() {return this;}
 	public ReadOnlyObjectProperty<BlockWorkspace> workspaceProperty() {return workspace.getReadOnlyProperty();}
@@ -29,9 +44,9 @@ public class BlockWorkspace extends Pane implements IBlockly{
 	public BlockWorkspace() {
 		getStyleClass().addAll(DEFAULT_STYLE_CLASS);
 	}
-
+	
 	public void addBlock(Block block) {
-		if (block.getWorkspace().equals(this)) {
+		if (block.hasWorkspace()&&block.getWorkspace().equals(this)) {
 			block.addToWorkspace();
 		} else {
 			getChildren().add(block);
@@ -54,5 +69,21 @@ public class BlockWorkspace extends Pane implements IBlockly{
 	
 	public void tryConnectBlock(Block block,Point2D point){
 		tryConnectBlock(block, point.getX(), point.getY());
+	}
+	
+	@Override
+	protected double computePrefWidth(double height) {
+		double width = 0;
+		for(Node node:getManagedChildren())
+			width = Math.max(width,node.getLayoutX() + node.prefWidth(-1));
+		return width;
+	}
+	
+	@Override
+	protected double computePrefHeight(double width) {
+		double height = 0;
+		for(Node node:getManagedChildren())
+			height = Math.max(height, node.getLayoutY() + node.prefHeight(-1));
+		return height;
 	}
 }

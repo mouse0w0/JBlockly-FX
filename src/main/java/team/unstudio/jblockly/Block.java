@@ -30,7 +30,9 @@ import javafx.geometry.Point2D;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.Parent;
+import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Control;
+import javafx.scene.control.MenuItem;
 import javafx.scene.control.Skin;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Region;
@@ -202,10 +204,12 @@ public class Block extends Control implements IBlockly,SVGPathHelper{
 			moving = new ReadOnlyBooleanWrapper(this, "moving"){
 				@Override
 				public void set(boolean newValue) {
-					if(newValue)
-						getWorkspace().setMovingBlock(Block.this);
-					else if(getWorkspace().getMovingBlock().equals(Block.this))
-						getWorkspace().setMovingBlock(null);
+					if(hasWorkspace()){
+						if(newValue)
+							getWorkspace().setMovingBlock(Block.this);
+						else if(getWorkspace().getMovingBlock().equals(Block.this))
+							getWorkspace().setMovingBlock(null);
+					}
 					
 					super.set(newValue);
 				}
@@ -266,6 +270,13 @@ public class Block extends Control implements IBlockly,SVGPathHelper{
 					return Block.this;
 				}
 			};
+			
+			name.addListener((observable, oldValue, newValue)->{
+				if(oldValue!=null&&!oldValue.isEmpty())
+					getStyleClass().remove(oldValue);
+				if(newValue!=null&&!newValue.isEmpty())
+					getStyleClass().add(newValue);
+			});
 		}
 		return name;
 	}
@@ -284,7 +295,7 @@ public class Block extends Control implements IBlockly,SVGPathHelper{
 
 				@Override
 				public String getName() {
-					return "builder";
+					return "provider";
 				}
 			
 			};
@@ -297,13 +308,7 @@ public class Block extends Control implements IBlockly,SVGPathHelper{
 	private ObjectProperty<Paint> fill;
 	public final ObjectProperty<Paint> fillProperty() {//TODO:Support CSS
 		if(fill==null)
-			fill = new StyleableObjectProperty<Paint>() {
-
-				@Override
-				public CssMetaData<? extends Styleable, Paint> getCssMetaData() {
-					// TODO 自动生成的方法存根
-					return null;
-				}
+			fill = new ObjectPropertyBase<Paint>() {
 
 				@Override
 				public Object getBean() {
@@ -323,14 +328,8 @@ public class Block extends Control implements IBlockly,SVGPathHelper{
 	private ObjectProperty<Paint> stroke;
 	public final ObjectProperty<Paint> strokeProperty() {//TODO:Support CSS
 		if(stroke==null)
-			stroke = new StyleableObjectProperty<Paint>() {
-
-				@Override
-				public CssMetaData<? extends Styleable, Paint> getCssMetaData() {
-					// TODO 自动生成的方法存根
-					return null;
-				}
-
+			stroke = new ObjectPropertyBase<Paint>() {
+			
 				@Override
 				public Object getBean() {
 					return Block.this;
@@ -345,6 +344,22 @@ public class Block extends Control implements IBlockly,SVGPathHelper{
 	}
 	public final Paint getStroke(){return stroke==null?Color.BLACK:stroke.get();}
 	public final void setStroke(Paint value){strokeProperty().set(value);}
+	
+	private ReadOnlyBooleanWrapper selected;
+	final ReadOnlyBooleanWrapper selectedPropertyImpl(){
+		if(selected == null){
+			selected = new ReadOnlyBooleanWrapper(this, "selected");
+			selected.addListener((observable, oldValue, newValue)->{
+				BlockWorkspace workspace = getWorkspace();
+				if(workspace!=null)
+					workspace.setSelectedBlock(Block.this);
+			});
+		}
+		return selected;
+	}
+	final void setSelected(boolean selected){selectedPropertyImpl().set(selected);}
+	public final boolean isSelected(){return selected == null ? false : selected.get();}
+	public ReadOnlyBooleanProperty selectedProperty(){return selectedPropertyImpl().getReadOnlyProperty();}
 	
 	private ReadOnlyObjectWrapper<BlockWorkspace> workspace;
 	private final ReadOnlyObjectWrapper<BlockWorkspace> workspacePropertyImpl(){
@@ -366,7 +381,7 @@ public class Block extends Control implements IBlockly,SVGPathHelper{
 	
 	private final ObservableList<BlockSlot> slots = FXCollections.observableArrayList();
 	private final ObservableList<BlockSlot> unmodifiableSlots = FXCollections.unmodifiableObservableList(slots);
-	public final ObservableList<BlockSlot> getSlots(){
+	public final ObservableList<BlockSlot> getUnmodifiableSlots(){
 		return unmodifiableSlots;
 	}
 	
@@ -378,10 +393,12 @@ public class Block extends Control implements IBlockly,SVGPathHelper{
 		getStyleClass().addAll(DEFAULT_STYLE_CLASS);
 
 		setOnMousePressed(event -> {
-			if (!isMovable())
-				return;
-
 			if(!hasWorkspace())
+				return;
+			
+			setSelected(true);
+			
+			if (!isMovable())
 				return;
 			
 			addToWorkspace();
@@ -406,7 +423,7 @@ public class Block extends Control implements IBlockly,SVGPathHelper{
 		setOnMouseReleased(event -> {
 			setMoving(false);
 			
-			if(isConnectable())
+			if(isConnectable()&&hasWorkspace())
 				getWorkspace().tryConnectBlock(this,getConnectLocation());
 			
 			event.consume();
@@ -435,16 +452,16 @@ public class Block extends Control implements IBlockly,SVGPathHelper{
 			}
 			
 		});
-		
-		name().addListener((observable, oldValue, newValue)->{
-			if(oldValue!=null&&!oldValue.isEmpty())
-				getStyleClass().remove(oldValue);
-			if(newValue!=null&&!newValue.isEmpty())
-				getStyleClass().add(newValue);
-		});
 
 		setPickOnBounds(false); // 启用不规则图形判断,具体见contains方法
 		setSnapToPixel(true);
+		
+		//Menu
+		ContextMenu menu = new ContextMenu();
+		MenuItem delete = new MenuItem("Delete");
+		delete.setOnAction(event->removeBlock());
+		menu.getItems().add(delete);
+		setContextMenu(menu);
 		
 		//default setting
 		setFill(Color.GRAY);
@@ -493,7 +510,7 @@ public class Block extends Control implements IBlockly,SVGPathHelper{
 		if(!getLayoutBounds().contains(x, y))
 			return false;
 		
-		for(BlockSlot slot:getSlots())
+		for(BlockSlot slot:getUnmodifiableSlots())
 			if(slot.tryConnectBlock(block, x-slot.getLayoutX(), y-slot.getLayoutY()))
 				return true;
 		

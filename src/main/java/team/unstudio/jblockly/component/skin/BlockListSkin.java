@@ -15,36 +15,36 @@ import team.unstudio.jblockly.util.IBlockProvider;
 
 public class BlockListSkin extends SkinBase<BlockList>{
 	
-	private Map<IBlockProvider, Block> builderToBlock = new HashMap<>();
+	private Map<IBlockProvider, Block> providerToBlock = new HashMap<>();
 
 	public BlockListSkin(BlockList control) {
 		super(control);
-		control.buildersProperty().addListener(buildersChangeListener);
+		control.providersProperty().addListener(providersChangeListener);
 		updateBlock();
 	}
 	
-    private InvalidationListener buildersChangeListener = observable -> updateBlock();
+    private InvalidationListener providersChangeListener = observable -> updateBlock();
 	
 	private void updateBlock(){
 		getChildren().clear();
 		
-		List<IBlockProvider> builders = getSkinnable().buildersProperty();
-		for(IBlockProvider builder:builders){
-			if(builderToBlock.containsKey(builder)){
-				Block block = builderToBlock.get(builder);
-				if(block.getParent()==null||!block.getParent().equals(getSkinnable())){
-					block = builder.build();
-					builderToBlock.put(builder, block);
+		List<IBlockProvider> providers = getSkinnable().providersProperty();
+		for(IBlockProvider provider:providers){
+			if(providerToBlock.containsKey(provider)){
+				Block block = providerToBlock.get(provider);
+				if(!getSkinnable().equals(block.getParent())){
+					block = provider.build();
+					providerToBlock.put(provider, block);
 				}
 				getChildren().add(block);
 			}else{
-				Block block = builder.build();
-				builderToBlock.put(builder, block);
+				Block block = provider.build();
+				providerToBlock.put(provider, block);
 				getChildren().add(block);
 			}
 		}
 		
-		builderToBlock.keySet().stream().filter(builder->!builders.contains(builder)).forEach(builder->builderToBlock.remove(builder));
+		providerToBlock.keySet().stream().filter(provider->!providers.contains(provider)).forEach(provider->providerToBlock.remove(provider));
 	}
 	
 	private boolean layouting;
@@ -73,7 +73,7 @@ public class BlockListSkin extends SkinBase<BlockList>{
 			double leftInset) {
 		double width = 0;
 		
-		for(Node node:getChildren()){
+		for(Node node:providerToBlock.values()){
 			double twidth = node.prefWidth(-1);
 			if(width<twidth)
 				width=twidth;
@@ -88,11 +88,16 @@ public class BlockListSkin extends SkinBase<BlockList>{
 		double spacing = getSkinnable().getSpacing();
 		double height = 0;
 		
-		for(Node node:getChildren()){
+		for(Node node:providerToBlock.values()){
 			double theight = node.prefHeight(-1);
 			height+=theight+spacing;
 		}
 		
-		return topInset + height - spacing + bottomInset;
+		return topInset + height + bottomInset;
+	}
+	
+	@Override
+	public void dispose() {
+		providerToBlock = null;
 	}
 }

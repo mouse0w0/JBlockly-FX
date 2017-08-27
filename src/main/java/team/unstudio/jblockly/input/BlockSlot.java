@@ -10,8 +10,6 @@ import javafx.beans.property.StringProperty;
 import javafx.beans.property.StringPropertyBase;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
-import javafx.geometry.HPos;
-import javafx.geometry.VPos;
 import javafx.scene.Parent;
 import javafx.scene.layout.Region;
 import team.unstudio.jblockly.Block;
@@ -177,6 +175,7 @@ public class BlockSlot extends Region implements BlockGlobal,IBlockly,IBlockInpu
 		setSlotType(slotType);
 		
 		setPickOnBounds(false);
+		setSnapToPixel(true);
 		
 		parentProperty().addListener((observable, oldValue, newValue)->{
 			if(oldValue instanceof IBlockly){
@@ -224,8 +223,12 @@ public class BlockSlot extends Region implements BlockGlobal,IBlockly,IBlockInpu
 
 	@Override
 	protected void layoutChildren() {
-		if (hasBlock())
-			layoutInArea(getBlock(), 0, 0, prefWidth(-1), prefHeight(-1), 0, null, HPos.CENTER, VPos.CENTER);
+		if (hasBlock()){
+			Block block = getBlock();
+			block.setLayoutX(0);
+			block.setLayoutY(0);
+//			layoutInArea(block, 0, 0, block.prefWidth(-1), block.prefHeight(-1), 0, null, HPos.CENTER, VPos.CENTER);
+		}
 	}
 
 	@Override

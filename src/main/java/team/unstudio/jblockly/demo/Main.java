@@ -1,7 +1,10 @@
 package team.unstudio.jblockly.demo;
 
 import javafx.application.Application;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.scene.Scene;
+import javafx.scene.control.ScrollPane;
 import javafx.stage.Stage;
 import team.unstudio.jblockly.component.BlockList;
 import team.unstudio.jblockly.input.SlotType;
@@ -32,20 +35,28 @@ public class Main extends Application {
 		SimpleBlockProvider getDalao = new SimpleBlockProvider().setConnectionType(ConnectionType.LEFT).setRegistyName("getDalao")
 				.addLabel("获取大佬").addBlockSlot(null, SlotType.INSERT);
 		
-		SimpleBlockProvider nvZhuang = new SimpleBlockProvider().setConnectionType(ConnectionType.LEFT).setRegistyName("nvZhuang")
-				.addLabel("女装").addBlockSlot();
-		
-		SimpleBlockProvider dalao = new SimpleBlockProvider().setConnectionType(ConnectionType.TOPANDBOTTOM).setRegistyName("dalao")
-				.addLabel("变量").addTextField("variaty").addBlockSlot(null, SlotType.INSERT).addNextSlot();
+		SimpleBlockProvider variable = new SimpleBlockProvider().setConnectionType(ConnectionType.TOPANDBOTTOM).setRegistyName("variable")
+				.addLabel("变量").addTextField("name").addBlockSlot(null, SlotType.INSERT).addNextSlot();
 		
 		SimpleBlockProvider set = new SimpleBlockProvider().setConnectionType(ConnectionType.LEFT).setRegistyName("set")
 				.addLabel("=").addBlockSlot(null, SlotType.INSERT);
 		
 		BlockList blockList = new BlockList();
-		blockList.buildersProperty().addAll(main,ifBlock,end,string,getDalao,dalao,set);
+		blockList.providersProperty().addAll(main,ifBlock,end,string,getDalao,variable,set);
+		
+		ScrollPane scrollPane2 = new ScrollPane(blockList);
+		scrollPane2.setPrefWidth(200);
 		
 		BlockWorkspace workspace = new BlockWorkspace();
-		workspace.getChildren().add(blockList);
+		workspace.getChildren().add(scrollPane2);
+		blockList.setWorkspace(workspace);
+		
+		ScrollPane scrollPane = new ScrollPane(workspace);
+		scrollPane.viewportBoundsProperty().addListener((observable, oldValue, newValue)->{
+			scrollPane2.setPrefHeight(newValue.getHeight());
+		});
+		scrollPane.hvalueProperty().addListener((observable, oldValue, newValue)->System.out.println(newValue));
+		scrollPane.vvalueProperty().addListener((observable, oldValue, newValue)->System.out.println(newValue));
 		
 //		Block bmain = main.build();
 //		workspace.addBlock(main.build());
@@ -53,13 +64,12 @@ public class Main extends Application {
 //		workspace.addBlock(ifBlock.build());
 //		workspace.addBlock(hookan.build());
 //		workspace.addBlock(getDalao.build());
-////		workspace.addBlock(nvZhuang.build());
 //		workspace.addBlock(dalao.build());
 //		workspace.addBlock(dalao.build());
 //		workspace.addBlock(set.build());
 //		workspace.addBlock(end.build());
 
-		Scene scene = new Scene(workspace);
+		Scene scene = new Scene(scrollPane);
 
 		stage.setTitle("JBlockly");
 		stage.setWidth(900);
