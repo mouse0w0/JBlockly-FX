@@ -13,14 +13,14 @@ import javafx.scene.control.Skin;
 import team.unstudio.jblockly.BlockWorkspace;
 import team.unstudio.jblockly.IBlockly;
 import team.unstudio.jblockly.component.skin.BlockListSkin;
-import team.unstudio.jblockly.util.IBlockBuilder;
+import team.unstudio.jblockly.util.IBlockProvider;
 
 public class BlockList extends Control implements IBlockly{
 	
-	private ListProperty<IBlockBuilder> builders;
-	public final ListProperty<IBlockBuilder> buildersProperty(){
+	private ListProperty<IBlockProvider> builders;
+	public final ListProperty<IBlockProvider> buildersProperty(){
 		if(builders==null)
-			builders = new ListPropertyBase<IBlockBuilder>(FXCollections.observableArrayList()) {
+			builders = new ListPropertyBase<IBlockProvider>(FXCollections.observableArrayList()) {
 
 				@Override
 				public Object getBean() {

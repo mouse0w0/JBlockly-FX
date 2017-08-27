@@ -18,7 +18,7 @@ import team.unstudio.jblockly.Block;
 import team.unstudio.jblockly.BlockGlobal;
 import team.unstudio.jblockly.BlockWorkspace;
 import team.unstudio.jblockly.IBlockly;
-import team.unstudio.jblockly.util.IBlockBuilder;
+import team.unstudio.jblockly.util.IBlockProvider;
 
 public class BlockSlot extends Region implements BlockGlobal,IBlockly,IBlockInput<Block>{
 
@@ -109,10 +109,10 @@ public class BlockSlot extends Region implements BlockGlobal,IBlockly,IBlockInpu
 	
 	//TODO:
 	private Block cacheDefaultBlock;
-	private ObjectProperty<IBlockBuilder> defaultBlock;
-	private final ObjectProperty<IBlockBuilder> defaultBlockProperty(){
+	private ObjectProperty<IBlockProvider> defaultBlock;
+	private final ObjectProperty<IBlockProvider> defaultBlockProperty(){
 		if(defaultBlock == null){
-			defaultBlock = new ObjectPropertyBase<IBlockBuilder>() {
+			defaultBlock = new ObjectPropertyBase<IBlockProvider>() {
 				@Override
 				public Object getBean() {
 					return BlockSlot.this;
@@ -127,8 +127,8 @@ public class BlockSlot extends Region implements BlockGlobal,IBlockly,IBlockInpu
 			
 		return defaultBlock;
 	}
-	public final IBlockBuilder getDefaultBlock() {return defaultBlock==null?null:defaultBlock.get();}
-	public final boolean setDefaultBlock(IBlockBuilder builder) {
+	public final IBlockProvider getDefaultBlock() {return defaultBlock==null?null:defaultBlock.get();}
+	public final boolean setDefaultBlock(IBlockProvider builder) {
 		defaultBlockProperty().set(builder);
 		return true;
 	}
@@ -192,7 +192,7 @@ public class BlockSlot extends Region implements BlockGlobal,IBlockly,IBlockInpu
 		});
 	}
 	
-	public BlockSlot(SlotType slotType,IBlockBuilder defaultBlock) {
+	public BlockSlot(SlotType slotType,IBlockProvider defaultBlock) {
 		this(slotType);
 		setDefaultBlock(defaultBlock);
 	}

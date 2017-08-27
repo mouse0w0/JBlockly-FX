@@ -16,7 +16,7 @@ import team.unstudio.jblockly.input.BlockSlot;
 import team.unstudio.jblockly.input.BlockTextField;
 import team.unstudio.jblockly.input.SlotType;
 
-public class SimpleBlockBuilder implements IBlockBuilder{
+public class SimpleBlockProvider implements IBlockProvider{
 	
 	private static final Map<String,Class<? extends NodeBuilder>> REGISTERED_NODE_BUILDERS = new HashMap<>();
 	static{
@@ -45,91 +45,91 @@ public class SimpleBlockBuilder implements IBlockBuilder{
 	
 	private ConnectionType connectionType = ConnectionType.NONE;
 	public ConnectionType getConnectionType() {return connectionType;}
-	public SimpleBlockBuilder setConnectionType(ConnectionType connectionType) {
+	public SimpleBlockProvider setConnectionType(ConnectionType connectionType) {
 		this.connectionType = connectionType;
 		return this;
 	}
 	
 	private String registyName;
 	public String getRegistyName(){return registyName;}
-	public SimpleBlockBuilder setRegistyName(String registyName){
+	public SimpleBlockProvider setRegistyName(String registyName){
 		this.registyName = registyName;
 		return this;
 	}
 	
 	private Color fill;
 	public Color getFill(){return fill;}
-	public SimpleBlockBuilder setFill(Color fill){
+	public SimpleBlockProvider setFill(Color fill){
 		this.fill = fill;
 		return this;
 	}
 	
 	private Color stroke;
 	public Color getStroke(){return stroke;}
-	public SimpleBlockBuilder setStroke(Color stroke){
+	public SimpleBlockProvider setStroke(Color stroke){
 		this.stroke = stroke;
 		return this;
 	}
 	
 	private final List<NodeBuilder> builders = new LinkedList<>();
 	
-	public SimpleBlockBuilder() {}
+	public SimpleBlockProvider() {}
 	
-	public SimpleBlockBuilder addNodeBuilder(NodeBuilder builder){
+	public SimpleBlockProvider addNodeBuilder(NodeBuilder builder){
 		if(builder!=null)
 			builders.add(builder);
 		return this;
 	}
 	
-	public SimpleBlockBuilder addLabel(String text){
+	public SimpleBlockProvider addLabel(String text){
 		addNodeBuilder(new LabelBuilder(text));
 		return this;
 	}
 	
-	public SimpleBlockBuilder addNextSlot(){
+	public SimpleBlockProvider addNextSlot(){
 		addBlockSlot("next", SlotType.NEXT);
 		return this;
 	}
 	
-	public SimpleBlockBuilder addBlockSlot(){
+	public SimpleBlockProvider addBlockSlot(){
 		addBlockSlot(null,SlotType.NONE);
 		return this;
 	}
 	
-	public SimpleBlockBuilder addBlockSlot(String name,SlotType type){
+	public SimpleBlockProvider addBlockSlot(String name,SlotType type){
 		addBlockSlot(name, type, null);
 		return this;
 	}
 	
-	public SimpleBlockBuilder addBlockSlot(String name,SlotType type,SimpleBlockBuilder defaultBlock){
+	public SimpleBlockProvider addBlockSlot(String name,SlotType type,SimpleBlockProvider defaultBlock){
 		addNodeBuilder(new BlockSlotBuilder(name, type, defaultBlock));
 		return this;
 	}
 	
-	public SimpleBlockBuilder addTextField(String name){
+	public SimpleBlockProvider addTextField(String name){
 		addTextField(name, null,null);
 		return this;
 	}
 	
-	public SimpleBlockBuilder addTextField(String name,String text,String defaultText){
+	public SimpleBlockProvider addTextField(String name,String text,String defaultText){
 		addNodeBuilder(new TextFieldBuilder(name, text, defaultText));
 		return this;
 	}
 	
-	public SimpleBlockBuilder addChoiceBox(String name,String[] objs){
+	public SimpleBlockProvider addChoiceBox(String name,String[] objs){
 		return this;
 	}
 	
-	public SimpleBlockBuilder addComboBox(String name,String[] objs){
+	public SimpleBlockProvider addComboBox(String name,String[] objs){
 		return this;
 	}
 	
-	public SimpleBlockBuilder addToggleButton(String name){
+	public SimpleBlockProvider addToggleButton(String name){
 		addToggleButton(name, false);
 		return this;
 	}
 	
-	public SimpleBlockBuilder addToggleButton(String name,boolean defaultValue){
+	public SimpleBlockProvider addToggleButton(String name,boolean defaultValue){
 		return this;
 	}
 	
@@ -153,7 +153,7 @@ public class SimpleBlockBuilder implements IBlockBuilder{
 		return sb.substring(0, sb.length()-1)+"]}";
 	}
 	
-	public SimpleBlockBuilder fromJson(String json){
+	public SimpleBlockProvider fromJson(String json){
 		builders.clear();
 		
 		JsonObject jsonObject = new JsonParser().parse(json).getAsJsonObject();
@@ -220,9 +220,9 @@ public class SimpleBlockBuilder implements IBlockBuilder{
 		
 		private String name;
 		private SlotType slotType;
-		private IBlockBuilder defaultBlock;
+		private IBlockProvider defaultBlock;
 		
-		public BlockSlotBuilder(String name,SlotType slotType,SimpleBlockBuilder defaultBlock) {
+		public BlockSlotBuilder(String name,SlotType slotType,SimpleBlockProvider defaultBlock) {
 			this.name = name==null?"":name;
 			this.slotType = slotType==null?SlotType.NONE:slotType;
 			this.defaultBlock = defaultBlock;
@@ -257,7 +257,7 @@ public class SimpleBlockBuilder implements IBlockBuilder{
 		public NodeBuilder fromJson(JsonObject jsonObject) {
 			name = jsonObject.get("name").getAsString();
 			slotType = jsonObject.has("slotType")?SlotType.valueOf(jsonObject.get("slotType").getAsString()):SlotType.NONE;
-			defaultBlock = BlockBuilderManager.INSTANCE.getBlockBuilder(jsonObject.get("defaultBlock").getAsString());
+			defaultBlock = BlockProviderRegisty.INSTANCE.getBlockProvider(jsonObject.get("defaultBlock").getAsString());
 			return this;
 		}
 		

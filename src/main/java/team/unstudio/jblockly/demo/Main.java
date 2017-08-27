@@ -5,7 +5,7 @@ import javafx.scene.Scene;
 import javafx.stage.Stage;
 import team.unstudio.jblockly.component.BlockList;
 import team.unstudio.jblockly.input.SlotType;
-import team.unstudio.jblockly.util.SimpleBlockBuilder;
+import team.unstudio.jblockly.util.SimpleBlockProvider;
 import team.unstudio.jblockly.BlockWorkspace;
 import team.unstudio.jblockly.ConnectionType;
 
@@ -17,28 +17,28 @@ public class Main extends Application {
 
 	@Override
 	public void start(Stage stage) throws Exception {
-		SimpleBlockBuilder main = new SimpleBlockBuilder().setConnectionType(ConnectionType.NONE).setRegistyName("main")
+		SimpleBlockProvider main = new SimpleBlockProvider().setConnectionType(ConnectionType.NONE).setRegistyName("main")
 				.addLabel("main").addBlockSlot().addBlockSlot("branch",SlotType.BRANCH).addLabel("").addBlockSlot();
 		
-		SimpleBlockBuilder ifBlock = new SimpleBlockBuilder().setConnectionType(ConnectionType.TOPANDBOTTOM).setRegistyName("if")
+		SimpleBlockProvider ifBlock = new SimpleBlockProvider().setConnectionType(ConnectionType.TOPANDBOTTOM).setRegistyName("if")
 				.addLabel("如果").addBlockSlot("if", SlotType.INSERT).addBlockSlot("branch", SlotType.BRANCH)
 				.addBlockSlot().addBlockSlot("next",SlotType.NEXT);
 		
-		SimpleBlockBuilder end = new SimpleBlockBuilder().setConnectionType(ConnectionType.TOP).setRegistyName("end").addLabel("返回").addBlockSlot();
+		SimpleBlockProvider end = new SimpleBlockProvider().setConnectionType(ConnectionType.TOP).setRegistyName("end").addLabel("返回").addBlockSlot();
 
-		SimpleBlockBuilder string = new SimpleBlockBuilder().setConnectionType(ConnectionType.LEFT).setRegistyName("string")
+		SimpleBlockProvider string = new SimpleBlockProvider().setConnectionType(ConnectionType.LEFT).setRegistyName("string")
 				.addLabel("\"").addTextField("text").addLabel("\"").addBlockSlot();
 		
-		SimpleBlockBuilder getDalao = new SimpleBlockBuilder().setConnectionType(ConnectionType.LEFT).setRegistyName("getDalao")
+		SimpleBlockProvider getDalao = new SimpleBlockProvider().setConnectionType(ConnectionType.LEFT).setRegistyName("getDalao")
 				.addLabel("获取大佬").addBlockSlot(null, SlotType.INSERT);
 		
-		SimpleBlockBuilder nvZhuang = new SimpleBlockBuilder().setConnectionType(ConnectionType.LEFT).setRegistyName("nvZhuang")
+		SimpleBlockProvider nvZhuang = new SimpleBlockProvider().setConnectionType(ConnectionType.LEFT).setRegistyName("nvZhuang")
 				.addLabel("女装").addBlockSlot();
 		
-		SimpleBlockBuilder dalao = new SimpleBlockBuilder().setConnectionType(ConnectionType.TOPANDBOTTOM).setRegistyName("dalao")
+		SimpleBlockProvider dalao = new SimpleBlockProvider().setConnectionType(ConnectionType.TOPANDBOTTOM).setRegistyName("dalao")
 				.addLabel("变量").addTextField("variaty").addBlockSlot(null, SlotType.INSERT).addNextSlot();
 		
-		SimpleBlockBuilder set = new SimpleBlockBuilder().setConnectionType(ConnectionType.LEFT).setRegistyName("set")
+		SimpleBlockProvider set = new SimpleBlockProvider().setConnectionType(ConnectionType.LEFT).setRegistyName("set")
 				.addLabel("=").addBlockSlot(null, SlotType.INSERT);
 		
 		BlockList blockList = new BlockList();

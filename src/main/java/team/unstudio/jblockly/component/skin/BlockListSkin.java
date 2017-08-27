@@ -4,23 +4,21 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.sun.javafx.scene.control.skin.BehaviorSkinBase;
-
 import javafx.beans.InvalidationListener;
 import javafx.geometry.HPos;
 import javafx.geometry.VPos;
 import javafx.scene.Node;
+import javafx.scene.control.SkinBase;
 import team.unstudio.jblockly.Block;
 import team.unstudio.jblockly.component.BlockList;
-import team.unstudio.jblockly.component.behavior.BlockListBehavior;
-import team.unstudio.jblockly.util.IBlockBuilder;
+import team.unstudio.jblockly.util.IBlockProvider;
 
-public class BlockListSkin extends BehaviorSkinBase<BlockList,BlockListBehavior>{
+public class BlockListSkin extends SkinBase<BlockList>{
 	
-	private Map<IBlockBuilder, Block> builderToBlock = new HashMap<>();
+	private Map<IBlockProvider, Block> builderToBlock = new HashMap<>();
 
 	public BlockListSkin(BlockList control) {
-		super(control, new BlockListBehavior(control));
+		super(control);
 		control.buildersProperty().addListener(buildersChangeListener);
 		updateBlock();
 	}
@@ -30,8 +28,8 @@ public class BlockListSkin extends BehaviorSkinBase<BlockList,BlockListBehavior>
 	private void updateBlock(){
 		getChildren().clear();
 		
-		List<IBlockBuilder> builders = getSkinnable().buildersProperty();
-		for(IBlockBuilder builder:builders){
+		List<IBlockProvider> builders = getSkinnable().buildersProperty();
+		for(IBlockProvider builder:builders){
 			if(builderToBlock.containsKey(builder)){
 				Block block = builderToBlock.get(builder);
 				if(block.getParent()==null||!block.getParent().equals(getSkinnable())){

@@ -24,6 +24,11 @@ public class BlockWorkspace extends Pane implements IBlockly{
 	private final ReadOnlyObjectWrapper<BlockWorkspace> workspace = new ReadOnlyObjectWrapper<BlockWorkspace>(this, "workspace", this);
 	public BlockWorkspace getWorkspace() {return this;}
 	public ReadOnlyObjectProperty<BlockWorkspace> workspaceProperty() {return workspace.getReadOnlyProperty();}
+	
+	private static final String DEFAULT_STYLE_CLASS = "block-workspace";
+	public BlockWorkspace() {
+		getStyleClass().addAll(DEFAULT_STYLE_CLASS);
+	}
 
 	public void addBlock(Block block) {
 		if (block.getWorkspace().equals(this)) {
