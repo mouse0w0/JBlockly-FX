@@ -40,10 +40,9 @@ import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
 import team.unstudio.jblockly.input.BlockSlot;
 import team.unstudio.jblockly.util.IBlockProvider;
-import team.unstudio.jblockly.util.SVGPathHelper;
 
 //TODO: Support event
-public class Block extends Control implements IBlockly,SVGPathHelper{
+public class Block extends Control implements IBlockly,BlockGlobal{
 	
 	private static final String MARGIN_CONSTRAINT = "block-margin";
 
@@ -464,8 +463,6 @@ public class Block extends Control implements IBlockly,SVGPathHelper{
 		setContextMenu(menu);
 		
 		//default setting
-		setFill(Color.GRAY);
-		setStroke(Color.BLACK);
 		setVSpacing(5);
 		setHSpacing(5);
 	}

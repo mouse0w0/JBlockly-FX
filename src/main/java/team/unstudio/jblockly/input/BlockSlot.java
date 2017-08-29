@@ -236,6 +236,10 @@ public class BlockSlot extends Region implements BlockGlobal,IBlockly,IBlockInpu
 		if(hasBlock())
 			return getBlock().prefWidth(-1);
 		
+		return getDefaultWidth();
+	}
+	
+	public double getDefaultWidth(){
 		switch (getSlotType()) {
 		case INSERT:
 			return INSERT_SLOT_WIDTH;
@@ -252,6 +256,10 @@ public class BlockSlot extends Region implements BlockGlobal,IBlockly,IBlockInpu
 		if(hasBlock())
 			return getBlock().prefHeight(-1);
 		
+		return getDefaultHeight();
+	}
+	
+	public double getDefaultHeight(){
 		switch (getSlotType()) {
 		case INSERT:
 			return INSERT_SLOT_HEIGHT;

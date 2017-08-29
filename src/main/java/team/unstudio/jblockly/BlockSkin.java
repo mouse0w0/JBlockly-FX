@@ -13,7 +13,6 @@ import javafx.scene.Node;
 import javafx.scene.control.SkinBase;
 import javafx.scene.shape.SVGPath;
 import team.unstudio.jblockly.input.BlockSlot;
-import team.unstudio.jblockly.input.SlotType;
 import team.unstudio.jblockly.util.SVGPathHelper;
 
 public class BlockSkin extends SkinBase<Block> implements BlockGlobal,SVGPathHelper{
@@ -34,6 +33,8 @@ public class BlockSkin extends SkinBase<Block> implements BlockGlobal,SVGPathHel
 		//Init SVGPath
 		svgPath.fillProperty().bind(getSkinnable().fillProperty());
 		svgPath.strokeProperty().bind(getSkinnable().strokeProperty());
+		svgPath.setLayoutX(0);
+		svgPath.setLayoutY(0);
 		getChildren().add(svgPath);
 		svgPath.toBack();
 		
@@ -77,9 +78,8 @@ public class BlockSkin extends SkinBase<Block> implements BlockGlobal,SVGPathHel
 			HPos hpos = pos.getHpos();
 			ConnectionType connectionType = block.getConnectionTypeInternal();
 			double x = connectionType==ConnectionType.LEFT?INSERT_WIDTH:0, y = 0;
-			boolean hasNext = false;
 			
-			sb.append(buildTopPath(connectionType, lines.get(0).getWidth()));
+			sb.append(buildTopPath(connectionType, lines.get(0).getLineWidth())); 
 	
 			label: for (int i = 0, size = lines.size(); i < size; i++) {
 				BlockLineWrapper line = lines.get(i);
@@ -87,74 +87,55 @@ public class BlockSkin extends SkinBase<Block> implements BlockGlobal,SVGPathHel
 				
 				switch (line.getSlot().getSlotType()) {
 				case BRANCH:
-					sb.append(buildBranchPath(connectionType,y, line.getWidth(), line.getHeight(),
-							i + 1 == size ? BLOCK_SLOT_MIN_LINE_WIDTH : lines.get(i + 1).getWidth()));
+					sb.append(buildBranchPath(connectionType,y, line.getLineWidth(), line.getFullHeight(),
+							i + 1 == size ? 
+									i - 1 == -1 ? BLOCK_SLOT_MIN_LINE_WIDTH : lines.get(i - 1).getLineWidth() 
+										: lines.get(i + 1).getLineWidth()));
 					break;
 				case INSERT:
-					sb.append(buildInsertPath(connectionType,y, line.getWidth()));
+					sb.append(buildInsertPath(connectionType,y, line.getLineWidth()));
 					break;
 				case NEXT:
-					hasNext = true;
 					break label;
 				default:
 					break;
 				}
 				
-				y += line.getHeight() + vSpace;
+				y += line.getFullHeight();
 			}
-			if(!hasNext&&connectionType!=ConnectionType.LEFT) y-=vSpace;
 			sb.append(buildBottomPath(connectionType, y));
 		}
 		
 		svgPath.setContent(sb.toString());
-		layoutInArea(svgPath, 0, 0, svgPath.prefWidth(-1), svgPath.prefHeight(-1), 0, HPos.CENTER, VPos.CENTER);
 		
 		performingLayout = false;
-	}
-
-	private void layoutLine(BlockLineWrapper line, double[][] actualAreaBounds, double left, double top,
-			double vSpace,double hSpace, HPos hpos, VPos vpos) {
-		double x = left + hSpace;
-		double y = top + vSpace;
-		
-		for (int i=0,size = line.getNodes().size();i<size;i++) {
-			Node child = line.getNodes().get(i);
-			layoutInArea(child, x, y, child.prefWidth(-1), child.prefHeight(-1), 0, Block.getMargin(child), hpos, vpos);
-			x += actualAreaBounds[0][i+line.getFirstNodeIndex()] + hSpace;
-		}
-		
-		BlockSlot slot = line.getSlot();
-		layoutInArea(slot, slot.getSlotType()==SlotType.INSERT?left+line.getWidth()-INSERT_SLOT_WIDTH:left+line.getWidth(),top, slot.prefWidth(-1), slot.prefHeight(-1), 0, null, hpos, vpos);
-	}
-
+	}	
 	private List<BlockLineWrapper> getLineBounds(List<Node> managed, double vSpace, double hSpace, double[][] actualAreaBounds) {
 		List<BlockLineWrapper> cacheLines = cacheLines();
-		double tempWidth = hSpace, tempHeight = 0, tempMaxWidth = 0;
+		double tempWidth = 0, tempHeight = 0, tempMaxWidth = 0;
 		int lastBranchBlockIndex = -1, firstNodeIndex = 0;
 		BlockLineWrapper line = new BlockLineWrapper();
 		
 		label: for (int i = 0, size = managed.size(); i < size; i++) {
 			Node child = managed.get(i);
-			
-			//计算Node宽高
 			Insets margin = Block.getMargin(child);
 			actualAreaBounds[0][i] = computeChildPrefAreaWidth(child, margin);
 			actualAreaBounds[1][i] = computeChildPrefAreaHeight(child, margin);
 			
-			if (tempHeight < actualAreaBounds[1][i]) tempHeight = actualAreaBounds[1][i];
-			
 			if (child instanceof BlockSlot) {
 				BlockSlot slot = (BlockSlot) child;
-				cacheLines.add(line);
 				line.setSlot(slot);
+				line.setSlotWidth(actualAreaBounds[0][i]);
+				line.setSlotHeight(actualAreaBounds[1][i]);
 				line.setWidth(tempWidth);
-				line.setHeight(tempHeight);
+				line.setHeight(Math.max(tempHeight + vSpace,actualAreaBounds[1][i]));
 				line.setFirstNodeIndex(firstNodeIndex);
+				cacheLines.add(line);
 				
-				if (tempMaxWidth < tempWidth) tempMaxWidth = tempWidth; // 求最大行宽
+				tempMaxWidth = Math.max(tempMaxWidth, tempWidth); // 求最大行宽
 
 				switch(slot.getSlotType()){
-					case BRANCH:
+					case BRANCH: //行对齐
 						int lastLine = cacheLines.size() - 1;
 						lineAlign(cacheLines, lastBranchBlockIndex + 1, lastLine - 1, tempMaxWidth);
 						lastBranchBlockIndex = lastLine;
@@ -173,12 +154,31 @@ public class BlockSkin extends SkinBase<Block> implements BlockGlobal,SVGPathHel
 			} else {
 				line.getNodes().add(child);
 				tempWidth += actualAreaBounds[0][i] + hSpace;
+				tempHeight = Math.max(tempHeight, actualAreaBounds[1][i]);
 			}
 		}	
+		
 		lineAlign(cacheLines, lastBranchBlockIndex + 1, cacheLines.size() - 1, tempMaxWidth); //最后一次行对齐
 		return cacheLines;
 	}
-	
+
+	private void layoutLine(BlockLineWrapper line, double[][] actualAreaBounds, double left, double top,
+			double vSpace, double hSpace, HPos hpos, VPos vpos) {
+		double x = left + hSpace,y = top + vSpace;
+		
+		for (int i=0,size = line.getNodes().size();i<size;i++) {
+			Node child = line.getNodes().get(i);
+			double width = actualAreaBounds[0][i+line.getFirstNodeIndex()],height = actualAreaBounds[1][line.getFirstNodeIndex()+i];
+			layoutInArea(child, x, y, width, height, 0, Block.getMargin(child), hpos, vpos);
+			x += width + hSpace;
+		}
+		
+		//layout slot
+		BlockSlot slot = line.getSlot();
+		slot.setLayoutX(left+line.getWidth());
+		slot.setLayoutY(top);
+	}
+
 	private void lineAlign(List<BlockLineWrapper> managed, int start, int end, double width) {
 		if(start==end)
 			return;
@@ -236,17 +236,14 @@ public class BlockSkin extends SkinBase<Block> implements BlockGlobal,SVGPathHel
 		
 		double left = block.getConnectionTypeInternal()==ConnectionType.LEFT?INSERT_WIDTH:0;
 		double vSpace = block.getVSpacing(),hSpace = block.getHSpacing();
-		double[][] actualAreaBounds = getTempArray(components.size());;
-		List<BlockLineWrapper> lines = getLineBounds(components, vSpace, hSpace, actualAreaBounds);
+		List<BlockLineWrapper> lines = getLineBounds(components, vSpace, hSpace, getTempArray(components.size()));
 		
 		if(lines.isEmpty())
 			return 0;
 		
 		double width = 0;
-		for(BlockLineWrapper line:lines){
-			double lineWidth = line.getWidth()+actualAreaBounds[0][line.getFirstNodeIndex()+line.getNodes().size()];
-			if(width<lineWidth) width = lineWidth;
-		}
+		for(BlockLineWrapper line:lines)
+			width = Math.max(width,line.getFullWidth());
 		
 		return left+width;
 	}
@@ -257,18 +254,16 @@ public class BlockSkin extends SkinBase<Block> implements BlockGlobal,SVGPathHel
 		Block block = getSkinnable();
 		
 		double vSpace = block.getVSpacing(),hSpace = block.getHSpacing();
-		double[][] actualAreaBounds = getTempArray(components.size());;
-		List<BlockLineWrapper> lines = getLineBounds(components, vSpace, hSpace, actualAreaBounds);
+		List<BlockLineWrapper> lines = getLineBounds(components, vSpace, hSpace, getTempArray(components.size()));
 		
 		if(lines.isEmpty())
 			return 0;
 		
-		double height = -vSpace;
+		double height = 0;
 		for(BlockLineWrapper line:lines)
-			height += line.getHeight() + vSpace;
+			height += line.getFullHeight();
 		
 		return height;
-		//return getConnectionTypeInternal()==ConnectionType.BOTTOM||getConnectionTypeInternal()==ConnectionType.TOPANDBOTTOM?height-vSpace:height;
 	}
 	
 	@Override
@@ -280,11 +275,10 @@ public class BlockSkin extends SkinBase<Block> implements BlockGlobal,SVGPathHel
 		super.dispose();
 	}
 	
-    static class BlockLineWrapper{
-    	//TODO: Replace cacheSlots\
+    private static class BlockLineWrapper{
     	private BlockSlot slot;
     	private final List<Node> nodes = new ArrayList<>();
-    	private double width = 0, height = 0;
+    	private double width = 0, height = 0, slotWidth = 0, slotHeight = 0;
     	private int firstNodeIndex;
 
     	public double getHeight() {
@@ -298,16 +292,16 @@ public class BlockSkin extends SkinBase<Block> implements BlockGlobal,SVGPathHel
     	public double getWidth() {
     		switch (slot.getSlotType()) {
     		case BRANCH:
-    			return width<BRANCH_MIN_WIDTH?BRANCH_MIN_WIDTH:width;
+    			return Math.max(BRANCH_MIN_WIDTH,width);
     		case NEXT:
     			return 0;
     		default:
-    			return width<BLOCK_SLOT_MIN_LINE_WIDTH?BLOCK_SLOT_MIN_LINE_WIDTH:width;
+    			return Math.max(BLOCK_SLOT_MIN_LINE_WIDTH,width);
     		}
     	}
-
-    	public void setWidth(double lineWidth) {
-    		this.width = lineWidth;
+    	
+    	public void setWidth(double width) {
+    		this.width = width;
     	}
 
     	public List<Node> getNodes() {
@@ -328,6 +322,48 @@ public class BlockSkin extends SkinBase<Block> implements BlockGlobal,SVGPathHel
 
 		public void setFirstNodeIndex(int firstNodeIndex) {
 			this.firstNodeIndex = firstNodeIndex;
+		}
+
+		public double getSlotWidth() {
+			return slotWidth;
+		}
+
+		public void setSlotWidth(double slotWidth) {
+			this.slotWidth = slotWidth;
+		}
+
+		public double getSlotHeight() {
+			return slotHeight;
+		}
+
+		public void setSlotHeight(double slotHeight) {
+			this.slotHeight = slotHeight;
+		}
+
+		public double getFullWidth() {
+			return getWidth()+getSlotWidth();
+		}
+
+		public double getFullHeight() {
+    		switch (slot.getSlotType()) {
+    		case NEXT:
+    			return slot.hasBlock()?getSlotHeight():getSlotHeight()+NEXT_SLOT_BOTTOM_HEIGHT;
+    		case BRANCH:
+    			return (slot.hasBlock()?Math.max(getHeight(),getSlotHeight()):Math.max(getHeight(),getSlotHeight()+BRANCH_SLOT_CONTAINER_MIN_HEIGHT))+BRANCH_SLOT_BOTTOM_HEIGHT;
+    		default:
+    			return Math.max(getHeight(),getSlotHeight());
+    		}
+		}
+		
+		public double getLineWidth(){
+    		switch (slot.getSlotType()) {
+    		case BRANCH:
+    		case NEXT:
+    			return getWidth();
+    		default:
+    			return getWidth()+slot.getDefaultWidth();
+    		}
+			
 		}
     }
 

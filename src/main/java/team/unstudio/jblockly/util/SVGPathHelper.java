@@ -35,14 +35,26 @@ public interface SVGPathHelper extends BlockGlobal{
 	default String buildBranchPath(ConnectionType connectionType, double y, double width, double height, double nextWidth) {
 		switch (connectionType) {
 		case LEFT:
-			return new StringBuilder(" V ").append(y).append(" H ").append(INSERT_WIDTH+width + NEXT_OFFSET_X + NEXT_WIDTH).append(" V ")
-				.append(y + NEXT_HEIGHT).append(" H ").append(INSERT_WIDTH+width + NEXT_OFFSET_X).append(" V ").append(y)
-				.append(" H ").append(INSERT_WIDTH+width).append(" V ").append(y + height).append(" H ").append(INSERT_WIDTH+nextWidth)
-				.toString();
+			return new StringBuilder(" V ").append(y)
+					.append(" H ").append(INSERT_WIDTH + width + NEXT_OFFSET_X + NEXT_WIDTH)
+					.append(" V ").append(y + NEXT_HEIGHT)
+					.append(" H ").append(INSERT_WIDTH + width + NEXT_OFFSET_X)
+					.append(" V ").append(y)
+					.append(" H ").append(INSERT_WIDTH + width)
+					.append(" V ").append(y + height - BRANCH_SLOT_BOTTOM_HEIGHT)
+					.append(" H ").append(INSERT_WIDTH + nextWidth)
+					.append(" V ").append(y + height)
+					.toString();
 		default:
-			return new StringBuilder(" V ").append(y).append(" H ").append(width + NEXT_OFFSET_X + NEXT_WIDTH).append(" V ")
-					.append(y + NEXT_HEIGHT).append(" H ").append(width + NEXT_OFFSET_X).append(" V ").append(y)
-					.append(" H ").append(width).append(" V ").append(y + height).append(" H ").append(nextWidth)
+			return new StringBuilder(" V ").append(y)
+					.append(" H ").append(width + NEXT_OFFSET_X + NEXT_WIDTH)
+					.append(" V ").append(y + NEXT_HEIGHT)
+					.append(" H ").append(width + NEXT_OFFSET_X)
+					.append(" V ").append(y)
+					.append(" H ").append(width)
+					.append(" V ").append(y + height - BRANCH_SLOT_BOTTOM_HEIGHT)
+					.append(" H ").append(nextWidth)
+					.append(" V ").append(y + height)
 					.toString();
 		}
 	}
