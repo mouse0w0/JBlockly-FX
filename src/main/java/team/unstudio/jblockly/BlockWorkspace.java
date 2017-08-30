@@ -62,8 +62,8 @@ public class BlockWorkspace extends Pane implements IBlockly{
 	}
 	
 	public void tryConnectBlock(Block block,double x,double y){
-		for(Block b:getBlocks())
-			if(b.tryConnectBlock(block, x-b.getLayoutX(), y-b.getLayoutY()))
+		for(Block targetBlock:getBlocks())
+			if(targetBlock.tryConnectBlock(block, x-targetBlock.getLayoutX(), y-targetBlock.getLayoutY()))
 				return;
 	}
 	

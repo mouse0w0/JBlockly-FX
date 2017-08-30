@@ -504,9 +504,6 @@ public class Block extends Control implements IBlockly,BlockGlobal{
 		if(block == this)
 			return false;
 		
-		if(!getLayoutBounds().contains(x, y))
-			return false;
-		
 		for(BlockSlot slot:getUnmodifiableSlots())
 			if(slot.tryConnectBlock(block, x-slot.getLayoutX(), y-slot.getLayoutY()))
 				return true;

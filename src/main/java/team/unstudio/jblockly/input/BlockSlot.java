@@ -211,8 +211,10 @@ public class BlockSlot extends Region implements BlockGlobal,IBlockly,IBlockInpu
 			return false;
 		}
 		
-		if(hasBlock())
-			return getBlock().tryConnectBlock(block, x, y);
+		if(hasBlock()){
+			Block targetBlock = getBlock();
+			return targetBlock.tryConnectBlock(block, x-targetBlock.getLayoutX(), y-targetBlock.getLayoutY());
+		}
 		
 		return false;
 	}
