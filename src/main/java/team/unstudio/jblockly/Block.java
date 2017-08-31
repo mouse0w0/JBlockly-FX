@@ -39,6 +39,7 @@ import javafx.scene.layout.Region;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
 import team.unstudio.jblockly.input.BlockSlot;
+import team.unstudio.jblockly.util.FXHelper;
 import team.unstudio.jblockly.util.IBlockProvider;
 
 //TODO: Support event
@@ -402,7 +403,7 @@ public class Block extends Control implements IBlockly,BlockGlobal{
 			
 			addToWorkspace();
 
-			Point2D pos = getRelativeWorkspace();
+			Point2D pos = FXHelper.getRelativePos(getWorkspace(), this);
 			tempOldX = event.getSceneX() - pos.getX();
 			tempOldY = event.getSceneY() - pos.getY();
 			
@@ -472,24 +473,11 @@ public class Block extends Control implements IBlockly,BlockGlobal{
 		if (oldParent instanceof BlockWorkspace) {
 			toFront();
 		} else {
-			Point2D pos = getRelativeWorkspace();
+			Point2D pos = FXHelper.getRelativePos(getWorkspace(), this);
 			getWorkspace().getChildren().add(this);
 			setLayoutX(pos.getX());
 			setLayoutY(pos.getY());
 		}
-	}
-	
-	private Point2D getRelativeWorkspace(){
-		//TODO: Screen relative location
-		BlockWorkspace workspace = getWorkspace();
-		Parent parent = getParent();
-		double x = getLayoutX(), y = getLayoutY();
-		while (parent!=null&&parent!=workspace) {
-			x += parent.getLayoutX();
-			y += parent.getLayoutY();
-			parent = parent.getParent();
-		}
-		return new Point2D(x, y);
 	}
 	
 	public void removeBlock(){
@@ -653,9 +641,4 @@ public class Block extends Control implements IBlockly,BlockGlobal{
     public static List<CssMetaData<? extends Styleable, ?>> getClassCssMetaData() {
         return StyleableProperties.STYLEABLES;
     }
-
-//    @Override
-//    public List<CssMetaData<? extends Styleable, ?>> getCssMetaData() {
-//        return getClassCssMetaData();
-//    }
 }

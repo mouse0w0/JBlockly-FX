@@ -1,30 +1,26 @@
 package team.unstudio.jblockly.util;
 
+import javafx.geometry.Point2D;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 
 public interface FXHelper {
-    static double getScreenX(Node node) {
-        return node.localToScene(node.getBoundsInLocal()).getMinX() + node.getScene().getX() + node.getScene().getWindow().getX();
-    }
-
-    static double getScreenY(Node node) {
-        return node.localToScene(node.getBoundsInLocal()).getMinY() + node.getScene().getY() + node.getScene().getWindow().getY();
+    
+    static Point2D getRelativePos(Parent parent,Node node) {
+    	Point2D parentScreenPos = getScreenPos(parent);
+    	Point2D nodeScreenPos = getScreenPos(node);
+    	return new Point2D(nodeScreenPos.getX() - parentScreenPos.getX(), nodeScreenPos.getY() - parentScreenPos.getY());
     }
     
-    static double getSceneX(Node node){
-    	return node.localToScene(node.getBoundsInLocal()).getMinX() + node.getScene().getX();
-    }
-    
-    static double getSceneY(Node node){
-    	return node.localToScene(node.getBoundsInLocal()).getMinY() + node.getScene().getY();
-    }
-    
-    static double getRelativeX(Parent parent,Node node) {
-    	return getSceneX(node)-getSceneX(parent);
-    }
-    
-    static double getRelativeY(Parent parent,Node node) {
-    	return getSceneY(node)-getSceneY(parent);
+    static Point2D getScreenPos(Node node){
+    	Parent parent = node.getParent();
+    	double x = node.getLayoutX() + node.getScene().getX() + node.getScene().getWindow().getX();
+    	double y = node.getLayoutY() + node.getScene().getY() + node.getScene().getWindow().getY();
+    	while(parent != null){
+    		x += parent.getLayoutX();
+    		y += parent.getLayoutY();
+    		parent = parent.getParent();
+    	}	
+    	return new Point2D(x, y);
     }
 }

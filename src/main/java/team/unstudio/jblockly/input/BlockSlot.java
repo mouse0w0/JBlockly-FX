@@ -62,7 +62,6 @@ public class BlockSlot extends Region implements BlockGlobal,IBlockly,IBlockInpu
 	public boolean isInsertable(){return insertable==null?true:insertable.get();}
 	public void setInsertable(boolean value){insertableProperty().set(value);}
 	
-	
 	private ReadOnlyObjectWrapper<Block> block;
 	private final ReadOnlyObjectWrapper<Block> blockPropertyImpl(){
 		if(block == null){
