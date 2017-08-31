@@ -1,4 +1,4 @@
-package team.unstudio.jblockly.util;
+package team.unstudio.jblockly.util.ui;
 
 import team.unstudio.jblockly.BlockGlobal;
 import team.unstudio.jblockly.ConnectionType;

@@ -39,8 +39,8 @@ import javafx.scene.layout.Region;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
 import team.unstudio.jblockly.input.BlockSlot;
-import team.unstudio.jblockly.util.FXHelper;
-import team.unstudio.jblockly.util.IBlockProvider;
+import team.unstudio.jblockly.util.provider.IBlockProvider;
+import team.unstudio.jblockly.util.ui.FXHelper;
 
 //TODO: Support event
 public class Block extends Control implements IBlockly,BlockGlobal{

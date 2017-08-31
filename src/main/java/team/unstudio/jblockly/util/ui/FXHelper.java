@@ -1,4 +1,4 @@
-package team.unstudio.jblockly.util;
+package team.unstudio.jblockly.util.ui;
 
 import javafx.geometry.Point2D;
 import javafx.scene.Node;

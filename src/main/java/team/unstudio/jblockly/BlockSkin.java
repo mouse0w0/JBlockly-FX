@@ -13,7 +13,7 @@ import javafx.scene.Node;
 import javafx.scene.control.SkinBase;
 import javafx.scene.shape.SVGPath;
 import team.unstudio.jblockly.input.BlockSlot;
-import team.unstudio.jblockly.util.SVGPathHelper;
+import team.unstudio.jblockly.util.ui.SVGPathHelper;
 
 public class BlockSkin extends SkinBase<Block> implements BlockGlobal,SVGPathHelper{
 	

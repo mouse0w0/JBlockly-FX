@@ -16,7 +16,7 @@ import team.unstudio.jblockly.Block;
 import team.unstudio.jblockly.BlockGlobal;
 import team.unstudio.jblockly.BlockWorkspace;
 import team.unstudio.jblockly.IBlockly;
-import team.unstudio.jblockly.util.IBlockProvider;
+import team.unstudio.jblockly.util.provider.IBlockProvider;
 
 public class BlockSlot extends Region implements BlockGlobal,IBlockly,IBlockInput<Block>{
 

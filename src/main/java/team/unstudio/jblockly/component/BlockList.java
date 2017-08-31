@@ -13,7 +13,7 @@ import javafx.scene.control.Skin;
 import team.unstudio.jblockly.BlockWorkspace;
 import team.unstudio.jblockly.IBlockly;
 import team.unstudio.jblockly.component.skin.BlockListSkin;
-import team.unstudio.jblockly.util.IBlockProvider;
+import team.unstudio.jblockly.util.provider.IBlockProvider;
 
 public class BlockList extends Control implements IBlockly{
 	

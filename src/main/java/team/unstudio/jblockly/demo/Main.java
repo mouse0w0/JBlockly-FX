@@ -10,7 +10,7 @@ import javafx.scene.shape.Rectangle;
 import javafx.stage.Stage;
 import team.unstudio.jblockly.component.BlockList;
 import team.unstudio.jblockly.input.SlotType;
-import team.unstudio.jblockly.util.SimpleBlockProvider;
+import team.unstudio.jblockly.util.provider.SimpleBlockProvider;
 import team.unstudio.jblockly.Block;
 import team.unstudio.jblockly.BlockWorkspace;
 import team.unstudio.jblockly.ConnectionType;

@@ -11,7 +11,7 @@ import javafx.scene.Node;
 import javafx.scene.control.SkinBase;
 import team.unstudio.jblockly.Block;
 import team.unstudio.jblockly.component.BlockList;
-import team.unstudio.jblockly.util.IBlockProvider;
+import team.unstudio.jblockly.util.provider.IBlockProvider;
 
 public class BlockListSkin extends SkinBase<BlockList>{
 	

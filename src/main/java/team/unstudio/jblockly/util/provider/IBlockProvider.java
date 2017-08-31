@@ -1,4 +1,4 @@
-package team.unstudio.jblockly.util;
+package team.unstudio.jblockly.util.provider;
 
 import team.unstudio.jblockly.Block;
 
