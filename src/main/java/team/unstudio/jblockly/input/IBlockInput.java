@@ -4,7 +4,7 @@ import javafx.beans.property.StringProperty;
 
 public interface IBlockInput<V> {
 
-	StringProperty name();
+	StringProperty nameProperty();
 	String getName();
 	void setName(String name);
 	V getValue();

@@ -8,7 +8,7 @@ public class BlockChoiceBox<T> extends ChoiceBox<T> implements IBlockInput<T>{
 
 	private StringProperty name;
 	@Override
-	public StringProperty name() {
+	public StringProperty nameProperty() {
 		if(name==null){
 			name = new StringPropertyBase() {
 				
@@ -28,7 +28,7 @@ public class BlockChoiceBox<T> extends ChoiceBox<T> implements IBlockInput<T>{
 	@Override
 	public String getName() {return name == null?"":name.get();}
 	@Override
-	public void setName(String name) {name().set(name);}
+	public void setName(String name) {nameProperty().set(name);}
 	
 	private static final String DEFAULT_STYLE_CLASS = "block-choice-box";
 	public BlockChoiceBox() {

@@ -8,7 +8,7 @@ public class BlockTextField extends TextField implements IBlockInput<String>{
 
 	private StringProperty name;
 	@Override
-	public StringProperty name() {
+	public StringProperty nameProperty() {
 		if(name==null){
 			name = new StringPropertyBase() {
 				
@@ -28,7 +28,7 @@ public class BlockTextField extends TextField implements IBlockInput<String>{
 	@Override
 	public String getName() {return name == null?"":name.get();}
 	@Override
-	public void setName(String name) {name().set(name);}
+	public void setName(String name) {nameProperty().set(name);}
 
 	@Override
 	public String getValue() {

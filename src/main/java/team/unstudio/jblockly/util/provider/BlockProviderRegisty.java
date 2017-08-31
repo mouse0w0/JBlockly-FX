@@ -6,7 +6,7 @@ import java.util.Map;
 public class BlockProviderRegisty {
 	public final static BlockProviderRegisty INSTANCE = new BlockProviderRegisty();
 	
-	private final Map<String,IBlockProvider> REGISTERED_BLOCK_PROVIDERS = new HashMap<>();
+	public final Map<String,IBlockProvider> REGISTERED_BLOCK_PROVIDERS = new HashMap<>();
 	
 	public void registerBlockProvider(IBlockProvider value){
 		REGISTERED_BLOCK_PROVIDERS.put(value.getRegistyName(), value);

@@ -144,7 +144,7 @@ public class BlockSlot extends Region implements BlockGlobal,IBlockly,IBlockInpu
 	private final ChangeListener<BlockWorkspace> workspaceListener = (observable, oldValue, newValue)->setWorkspace(newValue);
 	
 	private StringProperty name;
-	public StringProperty name() {
+	public StringProperty nameProperty() {
 		if(name==null){
 			name = new StringPropertyBase() {
 				
@@ -162,7 +162,7 @@ public class BlockSlot extends Region implements BlockGlobal,IBlockly,IBlockInpu
 		return name;
 	}
 	public String getName() {return name == null?"":name.get();}
-	public void setName(String name) {name().set(name);}
+	public void setName(String name) {nameProperty().set(name);}
 	
 	private static final String DEFAULT_STYLE_CLASS="block-slot";
 	public BlockSlot() {
