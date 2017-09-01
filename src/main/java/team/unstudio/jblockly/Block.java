@@ -34,6 +34,7 @@ import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Control;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.Skin;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Region;
 import javafx.scene.paint.Color;
@@ -256,7 +257,7 @@ public class Block extends Control implements IBlockly,BlockGlobal{
     }
     
 	private StringProperty name;
-	public final StringProperty name() {
+	public final StringProperty nameProperty() {
 		if(name==null){
 			name = new StringPropertyBase() {
 				
@@ -281,7 +282,7 @@ public class Block extends Control implements IBlockly,BlockGlobal{
 		return name;
 	}
 	public final String getName() {return name == null?"":name.get();}
-	public final void setName(String name) {name().set(name);}
+	public final void setName(String name) {nameProperty().set(name);}
 	
 	private ObjectProperty<IBlockProvider> provider;
 	public final ObjectProperty<IBlockProvider> providerProperty(){
@@ -392,7 +393,7 @@ public class Block extends Control implements IBlockly,BlockGlobal{
 	public Block() {
 		getStyleClass().addAll(DEFAULT_STYLE_CLASS);
 
-		setOnMousePressed(event -> {
+		addEventHandler(MouseEvent.MOUSE_PRESSED, event -> {
 			if(!hasWorkspace())
 				return;
 			
@@ -411,7 +412,7 @@ public class Block extends Control implements IBlockly,BlockGlobal{
 			
 			event.consume();
 		});
-		setOnMouseDragged(event -> {
+		addEventHandler(MouseEvent.MOUSE_DRAGGED, event -> {
 			if (!isMoving())
 				return;
 			
@@ -420,7 +421,7 @@ public class Block extends Control implements IBlockly,BlockGlobal{
 			
 			event.consume();
 		});
-		setOnMouseReleased(event -> {
+		addEventHandler(MouseEvent.MOUSE_RELEASED, event -> {
 			setMoving(false);
 			
 			if(isConnectable()&&hasWorkspace())
