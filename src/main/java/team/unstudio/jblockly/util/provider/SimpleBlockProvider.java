@@ -168,6 +168,11 @@ public class SimpleBlockProvider implements IBlockProvider{
 		
 		return this;
 	}
+	
+	public SimpleBlockProvider register(){
+		BlockProviderRegisty.INSTANCE.registerBlockProvider(this);
+		return this;
+	}
 
 	public static final String NODE_TYPE = "NODE_TYPE";
 	
