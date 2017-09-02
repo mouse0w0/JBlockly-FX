@@ -40,7 +40,7 @@ import javafx.scene.layout.Region;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
 import team.unstudio.jblockly.input.BlockSlot;
-import team.unstudio.jblockly.util.provider.IBlockProvider;
+import team.unstudio.jblockly.provider.IBlockProvider;
 import team.unstudio.jblockly.util.ui.FXHelper;
 
 //TODO: Support event
@@ -446,10 +446,11 @@ public class Block extends Control implements IBlockly,BlockGlobal{
 		getChildren().addListener(new ListChangeListener<Node>(){
 
 			@Override
-			public void onChanged(javafx.collections.ListChangeListener.Change<? extends Node> c) {
-				c.next();
-				c.getAddedSubList().stream().filter(node->node instanceof BlockSlot).forEach(node->slots.add((BlockSlot) node));
-				c.getRemoved().stream().filter(node->node instanceof BlockSlot).forEach(node->slots.remove(node));
+			public void onChanged(Change<? extends Node> c) {
+				while(c.next()){
+					c.getAddedSubList().stream().filter(node->node instanceof BlockSlot).forEach(node->slots.add((BlockSlot) node));
+					c.getRemoved().stream().filter(node->node instanceof BlockSlot).forEach(node->slots.remove(node));
+				}
 			}
 			
 		});
