@@ -3,8 +3,8 @@ package team.unstudio.jblockly.util.provider;
 import java.util.HashMap;
 import java.util.Map;
 
-public class BlockProviderRegisty {
-	public final static BlockProviderRegisty INSTANCE = new BlockProviderRegisty();
+public enum BlockProviderRegisty {
+	INSTANCE;
 	
 	public final Map<String,IBlockProvider> REGISTERED_BLOCK_PROVIDERS = new HashMap<>();
 	

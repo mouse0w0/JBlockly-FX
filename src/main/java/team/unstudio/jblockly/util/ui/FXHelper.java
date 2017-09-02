@@ -13,14 +13,14 @@ public interface FXHelper {
     }
     
     static Point2D getScreenPos(Node node){
-    	Parent parent = node.getParent();
     	double x = node.getLayoutX() + node.getScene().getX() + node.getScene().getWindow().getX();
     	double y = node.getLayoutY() + node.getScene().getY() + node.getScene().getWindow().getY();
+    	Parent parent = node.getParent();
     	while(parent != null){
     		x += parent.getLayoutX();
     		y += parent.getLayoutY();
     		parent = parent.getParent();
     	}	
-    	return new Point2D(x, y);
+    	return new Point2D(x,y);
     }
 }
