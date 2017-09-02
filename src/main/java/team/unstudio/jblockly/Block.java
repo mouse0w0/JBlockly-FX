@@ -208,7 +208,7 @@ public class Block extends Control implements IBlockly,BlockGlobal{
 					if(hasWorkspace()){
 						if(newValue)
 							getWorkspace().setMovingBlock(Block.this);
-						else if(getWorkspace().getMovingBlock().equals(Block.this))
+						else if(Block.this.equals(getWorkspace().getMovingBlock()))
 							getWorkspace().setMovingBlock(null);
 					}
 					
@@ -470,8 +470,7 @@ public class Block extends Control implements IBlockly,BlockGlobal{
 	}
 
 	public void addToWorkspace() {
-		Parent oldParent = getParent();
-		if (oldParent instanceof BlockWorkspace) {
+		if (getParent() instanceof BlockWorkspace) {
 			toFront();
 		} else {
 			Point2D pos = FXHelper.getRelativePos(getWorkspace(), this);
