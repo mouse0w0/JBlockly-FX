@@ -1,4 +1,4 @@
-package team.unstudio.jblockly.util.provider;
+package team.unstudio.jblockly.provider;
 
 import java.util.HashMap;
 import java.util.LinkedList;
