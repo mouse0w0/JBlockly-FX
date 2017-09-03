@@ -41,10 +41,11 @@ public class BlockSkin extends SkinBase<Block> implements BlockGlobal,SVGPathHel
 		getChildren().addListener(new ListChangeListener<Node>() {
 
 			@Override
-			public void onChanged(javafx.collections.ListChangeListener.Change<? extends Node> event) {
-				event.next();
-				components.removeAll(event.getRemoved());
-				components.addAll(event.getAddedSubList());
+			public void onChanged(Change<? extends Node> event) {
+				while(event.next()){
+					components.removeAll(event.getRemoved());
+					components.addAll(event.getAddedSubList());
+				}
 			}
 
 		});

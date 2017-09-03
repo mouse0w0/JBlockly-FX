@@ -8,18 +8,21 @@ import com.sun.javafx.css.converters.EnumConverter;
 import com.sun.javafx.css.converters.SizeConverter;
 
 import javafx.beans.property.ObjectProperty;
-import javafx.beans.property.ObjectPropertyBase;
 import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.beans.property.ReadOnlyBooleanWrapper;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.ReadOnlyObjectWrapper;
+import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
-import javafx.beans.property.StringPropertyBase;
 import javafx.beans.value.ChangeListener;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.css.CssMetaData;
+import javafx.css.SimpleStyleableBooleanProperty;
+import javafx.css.SimpleStyleableDoubleProperty;
+import javafx.css.SimpleStyleableObjectProperty;
 import javafx.css.Styleable;
 import javafx.css.StyleableBooleanProperty;
 import javafx.css.StyleableDoubleProperty;
@@ -79,25 +82,8 @@ public class Block extends Control implements IBlockly,BlockGlobal{
 
 	private StyleableBooleanProperty movable;
 	public final StyleableBooleanProperty movableProperty() {
-		if (movable == null) {
-			movable = new StyleableBooleanProperty(true) {
-				
-				@Override
-				public String getName() {
-					return "movable";
-				}
-
-				@Override
-				public Object getBean() {
-					return Block.this;
-				}
-				
-				@Override
-				public CssMetaData<? extends Styleable, Boolean> getCssMetaData() {
-					return StyleableProperties.MOVABLE;
-				}
-			};
-		}
+		if (movable == null) 
+			movable = new SimpleStyleableBooleanProperty(StyleableProperties.MOVABLE, this, "movable", true);
 		return movable;
 	}
 	public final boolean isMovable() {return movable==null?true:movableProperty().get();}
@@ -105,30 +91,14 @@ public class Block extends Control implements IBlockly,BlockGlobal{
 	
 	private StyleableDoubleProperty vSpacing;
 	public final StyleableDoubleProperty vSpacingProperty(){
-		if(vSpacing == null){
-			vSpacing = new StyleableDoubleProperty() {
+		if(vSpacing == null)
+			vSpacing = new SimpleStyleableDoubleProperty(StyleableProperties.V_SPACING,this,"vSpacing") {
 				
 				@Override
 				public void invalidated() {
 					requestLayout();
 				}
-				
-                @Override
-                public CssMetaData<Block, Number> getCssMetaData() {
-                    return StyleableProperties.V_SPACING;
-                }
-				
-				@Override
-				public String getName() {
-					return "vSpacing";
-				}
-				
-				@Override
-				public Object getBean() {
-					return Block.this;
-				}
 			};
-		}
 		return vSpacing;
 	}
 	public final double getVSpacing(){return vSpacing==null?0:vSpacing.get();}
@@ -136,30 +106,14 @@ public class Block extends Control implements IBlockly,BlockGlobal{
 	
 	private StyleableDoubleProperty hSpacing;
 	public final StyleableDoubleProperty hSpacingProperty(){
-		if(hSpacing == null){
-			hSpacing = new StyleableDoubleProperty() {
+		if(hSpacing == null)
+			hSpacing = new SimpleStyleableDoubleProperty(StyleableProperties.H_SPACING,this,"hSpacing") {
 				
 				@Override
 				public void invalidated() {
 					requestLayout();
 				}
-				
-                @Override
-                public CssMetaData<Block, Number> getCssMetaData() {
-                    return StyleableProperties.H_SPACING;
-                }
-				
-				@Override
-				public String getName() {
-					return "hSpacing";
-				}
-				
-				@Override
-				public Object getBean() {
-					return Block.this;
-				}
 			};
-		}
 		return hSpacing;
 	}
 	public final double getHSpacing(){return hSpacing==null?0:hSpacing.get();}
@@ -167,29 +121,13 @@ public class Block extends Control implements IBlockly,BlockGlobal{
 	
 	private StyleableObjectProperty<Pos> alignment;
     public final StyleableObjectProperty<Pos> alignmentProperty() {
-        if (alignment == null) {
-            alignment = new StyleableObjectProperty<Pos>(Pos.TOP_LEFT) {
+        if (alignment == null)
+            alignment = new SimpleStyleableObjectProperty<Pos>(StyleableProperties.ALIGNMENT,this,"alignment",Pos.TOP_LEFT) {
                 @Override
                 public void invalidated() {
                     requestLayout();
                 }
-
-                @Override
-                public CssMetaData<Block, Pos> getCssMetaData() {
-                    return StyleableProperties.ALIGNMENT;
-                }
-
-                @Override
-                public Object getBean() {
-                    return Block.this;
-                }
-
-                @Override
-                public String getName() {
-                    return "alignment";
-                }
             };
-        }
         return alignment;
     }
     public final void setAlignment(Pos value) { alignmentProperty().set(value); }
@@ -222,31 +160,15 @@ public class Block extends Control implements IBlockly,BlockGlobal{
 	public final boolean isMoving(){return moving==null?false:moving.get();}
 	public final ReadOnlyBooleanProperty movingProperty(){return movingPropertyImpl().getReadOnlyProperty();}
 	
-	private StyleableObjectProperty<ConnectionType> connectionType;
-	public final StyleableObjectProperty<ConnectionType> connectionTypeProperty(){
-		if(connectionType==null){
-			connectionType = new StyleableObjectProperty<ConnectionType>() {
+	private ObjectProperty<ConnectionType> connectionType;
+	public final ObjectProperty<ConnectionType> connectionTypeProperty(){
+		if(connectionType==null)
+			connectionType = new SimpleObjectProperty<ConnectionType>(this,"connection") {
                 @Override
                 public void invalidated() {
                     requestLayout();
                 }
-                
-				@Override
-				public CssMetaData<? extends Styleable, ConnectionType> getCssMetaData() {
-					return StyleableProperties.CONNECTION;
-				}
-
-				@Override
-				public Object getBean() {
-					return Block.this;
-				}
-
-				@Override
-				public String getName() {
-					return "connection";
-				}
 			};
-		}
 		return connectionType;
 	}
 	public ConnectionType getConnectionType() {return connectionType==null?ConnectionType.NONE:connectionTypeProperty().get();}
@@ -259,25 +181,18 @@ public class Block extends Control implements IBlockly,BlockGlobal{
 	private StringProperty name;
 	public final StringProperty nameProperty() {
 		if(name==null){
-			name = new StringPropertyBase() {
-				
+			name = new SimpleStringProperty(this,"name") {
 				@Override
-				public String getName() {
-					return "name";
-				}
-				
-				@Override
-				public Object getBean() {
-					return Block.this;
+				public void set(String newValue) {
+					String oldValue = get();
+					if(oldValue!=null&&!oldValue.isEmpty())
+						getStyleClass().remove(oldValue);
+					if(newValue!=null&&!newValue.isEmpty())
+						getStyleClass().add(newValue);
+					
+					super.set(newValue);
 				}
 			};
-			
-			name.addListener((observable, oldValue, newValue)->{
-				if(oldValue!=null&&!oldValue.isEmpty())
-					getStyleClass().remove(oldValue);
-				if(newValue!=null&&!newValue.isEmpty())
-					getStyleClass().add(newValue);
-			});
 		}
 		return name;
 	}
@@ -287,19 +202,7 @@ public class Block extends Control implements IBlockly,BlockGlobal{
 	private ObjectProperty<IBlockProvider> provider;
 	public final ObjectProperty<IBlockProvider> providerProperty(){
 		if(provider == null)
-			provider = new ObjectPropertyBase<IBlockProvider>() {
-
-				@Override
-				public Object getBean() {
-					return Block.this;
-				}
-
-				@Override
-				public String getName() {
-					return "provider";
-				}
-			
-			};
+			provider = new SimpleObjectProperty<IBlockProvider>(this, "provider");
 		return provider;
 	}
 	public final IBlockProvider getProvider(){return provider == null ? null : provider.get();}
@@ -309,18 +212,7 @@ public class Block extends Control implements IBlockly,BlockGlobal{
 	private ObjectProperty<Paint> fill;
 	public final ObjectProperty<Paint> fillProperty() {//TODO:Support CSS
 		if(fill==null)
-			fill = new ObjectPropertyBase<Paint>() {
-
-				@Override
-				public Object getBean() {
-					return Block.this;
-				}
-
-				@Override
-				public String getName() {
-					return "fill";
-				}
-			};
+			fill = new SimpleObjectProperty<Paint>(this,"fill");
 		return fill;
 	}
 	public final Paint getFill(){return fill==null?Color.WHITE:fill.get();}
@@ -329,18 +221,7 @@ public class Block extends Control implements IBlockly,BlockGlobal{
 	private ObjectProperty<Paint> stroke;
 	public final ObjectProperty<Paint> strokeProperty() {//TODO:Support CSS
 		if(stroke==null)
-			stroke = new ObjectPropertyBase<Paint>() {
-			
-				@Override
-				public Object getBean() {
-					return Block.this;
-				}
-
-				@Override
-				public String getName() {
-					return "stroke";
-				}
-			};
+			stroke = new SimpleObjectProperty<Paint>(this,"stroke");
 		return stroke;
 	}
 	public final Paint getStroke(){return stroke==null?Color.BLACK:stroke.get();}
@@ -349,12 +230,15 @@ public class Block extends Control implements IBlockly,BlockGlobal{
 	private ReadOnlyBooleanWrapper selected;
 	final ReadOnlyBooleanWrapper selectedPropertyImpl(){
 		if(selected == null){
-			selected = new ReadOnlyBooleanWrapper(this, "selected");
-			selected.addListener((observable, oldValue, newValue)->{
-				BlockWorkspace workspace = getWorkspace();
-				if(workspace!=null)
-					workspace.setSelectedBlock(Block.this);
-			});
+			selected = new ReadOnlyBooleanWrapper(this, "selected"){
+				@Override
+				protected void invalidated() {
+					boolean selected = get();
+					BlockWorkspace workspace = getWorkspace();
+					if(selected&&workspace!=null)
+						workspace.setSelectedBlock(Block.this);
+				}
+			};
 		}
 		return selected;
 	}
@@ -564,25 +448,9 @@ public class Block extends Control implements IBlockly,BlockGlobal{
                 return node.alignmentProperty();
             }
          };
-         
-         private static final CssMetaData<Block,ConnectionType> CONNECTION =
-                 new CssMetaData<Block,ConnectionType>("-fx-block-connection",
-                     new EnumConverter<ConnectionType>(ConnectionType.class),
-                     ConnectionType.NONE) {
-
-					@Override
-					public boolean isSettable(Block node) {
-						return node.connectionType == null || !node.connectionType.isBound();
-					}
-
-					@Override
-					public StyleableProperty<ConnectionType> getStyleableProperty(Block node) {
-						return node.connectionTypeProperty();
-					}
-             };
 
          private static final CssMetaData<Block,Number> V_SPACING =
-             new CssMetaData<Block,Number>("-fx-vSpacing",
+             new CssMetaData<Block,Number>("-fx-block-vSpacing",
                  SizeConverter.getInstance(), 0.0){
 
             @Override
@@ -597,7 +465,7 @@ public class Block extends Control implements IBlockly,BlockGlobal{
          };
          
          private static final CssMetaData<Block,Number> H_SPACING =
-                 new CssMetaData<Block,Number>("-fx-hSpacing",
+                 new CssMetaData<Block,Number>("-fx-block-hSpacing",
                      SizeConverter.getInstance(), 0.0){
 
                 @Override
@@ -631,7 +499,6 @@ public class Block extends Control implements IBlockly,BlockGlobal{
             final List<CssMetaData<? extends Styleable, ?>> styleables =
                 new ArrayList<CssMetaData<? extends Styleable, ?>>(Region.getClassCssMetaData());
             styleables.add(ALIGNMENT);
-            styleables.add(CONNECTION);
             styleables.add(V_SPACING);
             styleables.add(H_SPACING);
             styleables.add(MOVABLE);
