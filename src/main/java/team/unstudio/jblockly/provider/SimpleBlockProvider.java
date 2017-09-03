@@ -138,6 +138,7 @@ public class SimpleBlockProvider implements IBlockProvider{
 		block.setConnectionType(connectionType);
 		block.setFill(fill==null?Color.GRAY:fill);
 		block.setStroke(stroke==null?Color.BLACK:stroke);
+		block.setProvider(this);
 		for(NodeBuilder nb:builders)
 			block.getChildren().add(nb.build());
 		return block;
