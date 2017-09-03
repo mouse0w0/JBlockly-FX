@@ -10,7 +10,9 @@ import javafx.geometry.Insets;
 import javafx.geometry.VPos;
 import javafx.scene.Node;
 import javafx.scene.control.SkinBase;
+import javafx.scene.image.ImageView;
 import javafx.scene.shape.SVGPath;
+import team.unstudio.jblockly.component.BlockButton;
 import team.unstudio.jblockly.input.BlockSlot;
 import team.unstudio.jblockly.util.ui.SVGPathHelper;
 
@@ -18,6 +20,8 @@ public class BlockSkin extends SkinBase<Block> implements BlockGlobal,SVGPathHel
 	
 	private ObservableList<Node> components;
 	private SVGPath svgPath = new SVGPath();
+	private BlockButton noteButton = new BlockButton("",new ImageView(BlockSkin.class.getResource("component/icon/ic_note_black_18dp_1x.png").toExternalForm()));
+	private BlockButton warningButton = new BlockButton("",new ImageView(BlockSkin.class.getResource("component/icon/ic_warning_black_18dp_1x.png").toExternalForm()));
 
 	public BlockSkin(Block control) {
 		super(control);
@@ -27,6 +31,13 @@ public class BlockSkin extends SkinBase<Block> implements BlockGlobal,SVGPathHel
 	}
 	
 	private void init(){
+		//Init buttons
+		getChildren().addAll(noteButton,warningButton);
+		noteButton.toBack();
+		warningButton.toBack();
+		noteButton.setVisible(false);
+		warningButton.setVisible(false);
+		
 		components.addAll(getChildren());
 		
 		//Init SVGPath
@@ -48,7 +59,6 @@ public class BlockSkin extends SkinBase<Block> implements BlockGlobal,SVGPathHel
 			}
 
 		});
-		
 	}
 	
 	public SVGPath getSVGPath(){
@@ -117,6 +127,7 @@ public class BlockSkin extends SkinBase<Block> implements BlockGlobal,SVGPathHel
 		
 		label: for (int i = 0, size = managed.size(); i < size; i++) {
 			Node child = managed.get(i);
+			
 			Insets margin = Block.getMargin(child);
 			actualAreaBounds[0][i] = computeChildPrefAreaWidth(child, margin);
 			actualAreaBounds[1][i] = computeChildPrefAreaHeight(child, margin);
@@ -167,6 +178,9 @@ public class BlockSkin extends SkinBase<Block> implements BlockGlobal,SVGPathHel
 		
 		for (int i=0,size = line.getNodes().size();i<size;i++) {
 			Node child = line.getNodes().get(i);
+			if(!child.isVisible())
+				continue;
+			
 			double width = actualAreaBounds[0][i+line.getFirstNodeIndex()],height = actualAreaBounds[1][line.getFirstNodeIndex()+i];
 			layoutInArea(child, x, y, width, height, 0, Block.getMargin(child), hpos, vpos);
 			x += width + hSpace;

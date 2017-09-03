@@ -332,11 +332,11 @@ public class Block extends Control implements IBlockly,BlockGlobal{
 		
 		//Menu
 		ContextMenu menu = new ContextMenu();
-		MenuItem delete = new MenuItem("Delete");
-		delete.setOnAction(event->removeBlock());
 		MenuItem note = new MenuItem("Note");
 		note.setOnAction(event->BlockHelper.showNotePopup(Block.this));
-		menu.getItems().addAll(delete,note);
+		MenuItem delete = new MenuItem("Delete");
+		delete.setOnAction(event->removeBlock());
+		menu.getItems().addAll(note,delete);
 		setContextMenu(menu);
 		
 		//default setting
