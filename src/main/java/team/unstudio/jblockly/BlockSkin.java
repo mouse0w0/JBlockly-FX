@@ -7,7 +7,6 @@ import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
-import javafx.geometry.Pos;
 import javafx.geometry.VPos;
 import javafx.scene.Node;
 import javafx.scene.control.SkinBase;
@@ -74,9 +73,8 @@ public class BlockSkin extends SkinBase<Block> implements BlockGlobal,SVGPathHel
 		StringBuilder sb = getTempStringBuilder();
 		
 		if(!lines.isEmpty()){
-			Pos pos = block.getAlignmentInternal();
-			VPos vpos = pos.getVpos();
-			HPos hpos = pos.getHpos();
+			VPos vpos = VPos.CENTER;
+			HPos hpos = HPos.CENTER;
 			ConnectionType connectionType = block.getConnectionTypeInternal();
 			double x = connectionType==ConnectionType.LEFT?INSERT_WIDTH:0, y = 0;
 			

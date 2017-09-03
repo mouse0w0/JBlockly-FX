@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import com.sun.javafx.css.converters.BooleanConverter;
-import com.sun.javafx.css.converters.EnumConverter;
 import com.sun.javafx.css.converters.SizeConverter;
 
 import javafx.beans.property.ObjectProperty;
@@ -22,15 +21,12 @@ import javafx.collections.ObservableList;
 import javafx.css.CssMetaData;
 import javafx.css.SimpleStyleableBooleanProperty;
 import javafx.css.SimpleStyleableDoubleProperty;
-import javafx.css.SimpleStyleableObjectProperty;
 import javafx.css.Styleable;
 import javafx.css.StyleableBooleanProperty;
 import javafx.css.StyleableDoubleProperty;
-import javafx.css.StyleableObjectProperty;
 import javafx.css.StyleableProperty;
 import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
-import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.control.ContextMenu;
@@ -118,24 +114,6 @@ public class Block extends Control implements IBlockly,BlockGlobal{
 	}
 	public final double getHSpacing(){return hSpacing==null?0:hSpacing.get();}
 	public final void setHSpacing(double value){hSpacingProperty().set(value);}
-	
-	private StyleableObjectProperty<Pos> alignment;
-    public final StyleableObjectProperty<Pos> alignmentProperty() {
-        if (alignment == null)
-            alignment = new SimpleStyleableObjectProperty<Pos>(StyleableProperties.ALIGNMENT,this,"alignment",Pos.TOP_LEFT) {
-                @Override
-                public void invalidated() {
-                    requestLayout();
-                }
-            };
-        return alignment;
-    }
-    public final void setAlignment(Pos value) { alignmentProperty().set(value); }
-    public final Pos getAlignment() { return alignment == null ? Pos.TOP_LEFT : alignment.get(); }
-    public final Pos getAlignmentInternal() {
-        Pos localPos = getAlignment();
-        return localPos == null ? Pos.TOP_LEFT : localPos;
-    }
 
 	private ReadOnlyBooleanWrapper moving;
 	private final ReadOnlyBooleanWrapper movingPropertyImpl(){
@@ -433,22 +411,6 @@ public class Block extends Control implements IBlockly,BlockGlobal{
 
      private static class StyleableProperties {
 
-         private static final CssMetaData<Block,Pos> ALIGNMENT =
-             new CssMetaData<Block,Pos>("-fx-alignment",
-                 new EnumConverter<Pos>(Pos.class),
-                 Pos.TOP_LEFT) {
-
-            @Override
-            public boolean isSettable(Block node) {
-                return node.alignment == null || !node.alignment.isBound();
-            }
-
-            @Override
-            public StyleableProperty<Pos> getStyleableProperty(Block node) {
-                return node.alignmentProperty();
-            }
-         };
-
          private static final CssMetaData<Block,Number> V_SPACING =
              new CssMetaData<Block,Number>("-fx-block-vSpacing",
                  SizeConverter.getInstance(), 0.0){
@@ -498,7 +460,6 @@ public class Block extends Control implements IBlockly,BlockGlobal{
          static {
             final List<CssMetaData<? extends Styleable, ?>> styleables =
                 new ArrayList<CssMetaData<? extends Styleable, ?>>(Region.getClassCssMetaData());
-            styleables.add(ALIGNMENT);
             styleables.add(V_SPACING);
             styleables.add(H_SPACING);
             styleables.add(MOVABLE);
