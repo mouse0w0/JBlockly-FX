@@ -40,6 +40,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
 import team.unstudio.jblockly.input.BlockSlot;
 import team.unstudio.jblockly.provider.IBlockProvider;
+import team.unstudio.jblockly.util.BlockHelper;
 import team.unstudio.jblockly.util.ui.FXHelper;
 
 //TODO: Support event
@@ -176,6 +177,15 @@ public class Block extends Control implements IBlockly,BlockGlobal{
 	}
 	public final String getName() {return name == null?"":name.get();}
 	public final void setName(String name) {nameProperty().set(name);}
+	
+	private StringProperty note;
+	public final StringProperty noteProperty(){
+		if(note == null)
+			note = new SimpleStringProperty(this, "note");
+		return note;
+	}
+	public final String getNote() {return note == null?"":note.get();}
+	public final void setNote(String value){ noteProperty().set(value);}
 	
 	private ObjectProperty<IBlockProvider> provider;
 	public final ObjectProperty<IBlockProvider> providerProperty(){
@@ -324,7 +334,9 @@ public class Block extends Control implements IBlockly,BlockGlobal{
 		ContextMenu menu = new ContextMenu();
 		MenuItem delete = new MenuItem("Delete");
 		delete.setOnAction(event->removeBlock());
-		menu.getItems().add(delete);
+		MenuItem note = new MenuItem("Note");
+		note.setOnAction(event->BlockHelper.showNotePopup(Block.this));
+		menu.getItems().addAll(delete,note);
 		setContextMenu(menu);
 		
 		//default setting
