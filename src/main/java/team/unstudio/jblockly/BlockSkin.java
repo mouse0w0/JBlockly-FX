@@ -163,6 +163,9 @@ public class BlockSkin extends SkinBase<Block> implements BlockGlobal,SVGPathHel
 				line = new BlockLineWrapper();
 			} else {
 				line.getNodes().add(child);
+				
+				if(!child.isVisible())
+					continue;
 				tempWidth += actualAreaBounds[0][i] + hSpace;
 				tempHeight = Math.max(tempHeight, actualAreaBounds[1][i]);
 			}
