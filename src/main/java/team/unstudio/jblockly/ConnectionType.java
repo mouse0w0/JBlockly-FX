@@ -14,7 +14,7 @@ public enum ConnectionType {
 		this.canConnection = canConnection;
 	}
 	
-	public boolean isCanConnection(){
+	public boolean isConnectable(){
 		return canConnection;
 	}
 }
