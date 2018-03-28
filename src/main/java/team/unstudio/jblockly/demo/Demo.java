@@ -14,7 +14,7 @@ import team.unstudio.jblockly.Block;
 import team.unstudio.jblockly.BlockWorkspace;
 import team.unstudio.jblockly.ConnectionType;
 
-public class Main extends Application {
+public class Demo extends Application {
 
 	public static void main(String[] args) {
 		launch(args);
@@ -76,14 +76,13 @@ public class Main extends Application {
 		
 		ScrollPane scrollPane = new ScrollPane(workspace);
 		scrollPane.viewportBoundsProperty().addListener((observable, oldValue, newValue)->{
-			scrollPane2.setPrefHeight(newValue.getHeight());
+			System.out.println(newValue);
+			scrollPane2.setLayoutY(Math.abs(newValue.getMinY()));
 		});
-		scrollPane.hvalueProperty().addListener((observable, oldValue, newValue)->System.out.println(newValue));
-		scrollPane.vvalueProperty().addListener((observable, oldValue, newValue)->System.out.println(newValue));
 
 		Scene scene = new Scene(scrollPane);
 
-		stage.setTitle("JBlockly");
+		stage.setTitle("JBlockly Demo");
 		stage.setWidth(900);
 		stage.setHeight(600);
 		stage.setScene(scene);
